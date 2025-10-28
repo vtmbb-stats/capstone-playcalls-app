@@ -11,8 +11,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <style>
         .animate-pulse {
@@ -43,9 +43,8 @@
 </head>
 <body class="dark-mode">
     <div id="root"></div>
-    this is a text
-    <script type="text/babel">
-        const { useState, useCallback, useEffect } = React;
+    
+    <script>
 
         // Dark mode toggle
         function toggleDarkMode() {
@@ -58,12 +57,6 @@
                 body.classList.add('light-mode');
             }
         }
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
-        import { getDatabase } from "firebase/database";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
-
         // Your web app's Firebase configuration
         // For Firebase JS SDK v7.20.0 and later, measurementId is optional
         const firebaseConfig = {
@@ -77,18 +70,938 @@
         };
 
         // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        // Initialize Realtime Database and get a reference to the service
-        const database = getDatabase(app);
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        </script>
 
+        <script type="text/babel">
+        const { useState, useCallback, useEffect, useRef } = React;
+
+        // Play type definitions
+        const playTypeNames = {
+            '1': 'Zone Offense', // for example, can change to actual names
+            '2': 'Man Offense',
+            '3': 'Transition',
+            '4': 'Special Plays',
+            '5': 'Out of Bounds',
+            '6': 'Press Break'
+        };
+
+        const PlayCallingDashboard = () => {
+            const [darkMode, setDarkMode] = useState(false);
+            const [selectedYear, setSelectedYear] = useState('2024'); // For Viewing data
+            const [loggingYear, setLoggingYear] = useState('2025'); // For logging data
+            const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+            const [loading, setLoading] = useState(true);
+            const [lastUpdated, setLastUpdated] = useState(null);
+            const [playData, setPlayData] = useState(null);
+            const [availableYears, setAvailableYears] = useState([]);
+
+            // Play Selections Stats
+            const [selectedPlayType, setSelectedPlayType] = useState('');
+            const [selectedPlayGroup, setSelectedPlayGroup] = useState('');
+            const [selectedVariation, setSelectedVariation] = useState('');
+            const [availableGroups, setAvailableGroups] = useState([]);
+            const [availableVariations, setAvailableVariations] = useState([]);
+            const [selectedPlayStats, setSelectedPlayStats] = useState(null);
+
+            // Chart refs
+            const successRateChartRef = useRef(null);
+            const successRateChartInstance = useRef(null);
+            const pointDistributionChartRef = useRef(null);
+            const pointDistributionChartInstance = useRef(null);
+
+            // Logging interface state
+            const [expandedPlayType, setExpandedPlayType] = useState('');
+            const [logPlayGroup, setLogPlayGroup] = useState('');
+            const [logVariation, setLogVariation] = useState('');
+            const [logAvailableGroups, setLogAvailableGroups] = useState([]);
+            const [logAvailableVariations, setLogAvailableVariations] = useState([]);
+            const [logging, setLogging] = useState(false);
+
+            // Update body class when dark mode changes
+            useEffect(() => {
+                document.body.className = darkMode ? 'dark-mode' : 'light-mode';
+            }, [darkMode]);
+
+            // Update log available groups when expanded play type changes
+            useEffect(() => {
+                if (playData && expandedPlayType && playData[expandedPlayType]) {
+                    const groups = Object.keys(playData[expandedPlayType]).sort();
+                    setLogAvailableGroups(groups);
+                    setLogPlayGroup('');
+                    setLogVariation('');
+                    setLogAvailableVariations([]);
+                } else {
+                    setLogAvailableGroups([]);
+                    setLogPlayGroup('');
+                    setLogVariation('');
+                    setLogAvailableVariations([]);
+                }
+            }, [expandedPlayType, playData]);
+
+            // Update log available variations when log play group changes
+            useEffect(() => {
+                if (expandedPlayType && logPlayGroup && playData) {
+                    const groupData = playData[expandedPlayType]?.[logPlayGroup];
+                    if (groupData) {
+                        const variations = Object.keys(groupData).filter(key =>
+                            key.length === 1 && key.match(/[A-Z]/i)
+                        ).sort();
+                        setLogAvailableVariations(variations);
+                        setLogVariation('');
+                    } else {
+                        setLogAvailableVariations([]);
+                        setLogVariation('');
+                    }
+                }
+            }, [logPlayGroup, expandedPlayType, playData]);
+
+
+            // Log a play outcome to Firebase
+            const logPlayOutcome = async (outcome) => {
+                if (!expandedPlayType || !logPlayGroup || !logVariation) {
+                    alert('Please select play type, group, and variation');
+                    return;
+                }
+
+                try {
+                    setLogging(true);
+                    
+                    // Get current data from Firebase
+                    const playPath = `playcalls/${loggingYear}/${expandedPlayType}/${logPlayGroup}/${logVariation}`;
+                    const playRef = database.ref(playPath);
+                    const snapshot = await playRef.once('value');
+                    const currentData = snapshot.val() || {
+                        '-3': 0, '-2': 0, '+2': 0, '+2F': 0, '+3': 0, '+3F': 0,
+                        '-2F': 0, '-3F': 0, 'AvgPointsNoFTs': 0, 'FOF': 0,
+                        'MadeFG': 0, 'MissTO': 0, 'NOTHING': 0, 'NumCalls': 0, 'TO': 0
+                    };
+
+                    // Increment the specific outcome
+                    const updates = { ...currentData };
+                    updates[outcome] = (parseFloat(currentData[outcome]) || 0) + 1;
+                    updates.NumCalls = (parseInt(currentData.NumCalls) || 0) + 1;
+
+                    updates.timestamp = new Date().toISOString();
+
+                    // Recalculate percentages and averages
+                    const totalCalls = updates.NumCalls;
+                    const totalPoints = (updates['+2'] * 2) + (updates['+3'] * 3) + 
+                                    (updates['+2F'] * 2) + (updates['+3F'] * 3);
+                    updates.AvgPointsNoFTs = totalPoints / totalCalls;
+
+                    const madeFG = updates['+2'] + updates['+3'] + updates['+2F'] + updates['+3F'];
+                    updates.MadeFG = madeFG / totalCalls;
+
+                    const missTO = updates['-2'] + updates['-3'] + updates['-2F'] + updates['-3F'];
+                    updates.MissTO = missTO / totalCalls;
+
+                    updates.NOTHING = updates.NOTHING / totalCalls;
+                    updates.TO = updates.TO / totalCalls;
+
+                    updates.FOF = updates['+2F'] + updates['+3F'] + updates['-2F'] + updates['-3F'];
+
+                    // Save to Firebase
+                    await playRef.set(updates);
+
+                    // Reload data
+                    await loadPlayData();
+                    
+                    alert('Play logged successfully!');
+                    
+                    // Reset logging form
+                    setLogPlayGroup('');
+                    setLogVariation('');
+                    
+                } catch (error) {
+                    console.error('Error logging play:', error);
+                    alert('Error logging play: ' + error.message);
+                } finally {
+                    setLogging(false);
+                }
+            };
+            // Load years from Firebase
+            // Implement at the end when we have more years
+
+            // Load play data from Firebase
+            const loadPlayData = useCallback(async () => {
+                try {
+                    setLoading(true);
+                    
+                    const dbRef = database.ref(`playcalls/${selectedYear}`);
+                    const snapshot = await dbRef.once('value');
+                    
+                    if (!snapshot.exists()) {
+                        console.log('No data found for year:', selectedYear);
+                        setPlayData(null);
+                        setLoading(false);
+                        return;
+                    }
+
+                    const data = snapshot.val();
+                    setPlayData(data);
+                    setLastUpdated(new Date().toLocaleString());
+            } catch (error) {
+                console.error('Error fetching play data:', error);
+            } finally {
+                setLoading(false);
+            }
+        }, [selectedYear]);
+
+        // Load data on mount
+        useEffect(() => {
+            if (selectedYear) {
+                loadPlayData();
+            }
+        }, [selectedYear, loadPlayData]);
+
+        // Update available play groups when play type changes
+        useEffect(() => {
+            if (playData && selectedPlayType && playData[selectedPlayType]) {
+                const groups = Object.keys(playData[selectedPlayType]).sort();
+                setAvailableGroups(groups);
+                setSelectedPlayGroup('');
+                setSelectedVariation('');
+                setAvailableVariations([]);
+                setSelectedPlayStats(null);
+            } else {
+                setAvailableGroups([]);
+                setSelectedPlayGroup('');
+            }
+        }, [selectedPlayType, playData]);
+
+        // Update available variations when play group changes
+        useEffect(() => {
+            if (selectedPlayType && selectedPlayGroup && playData) {
+                const groupData = playData[selectedPlayType]?.[selectedPlayGroup];
+                if (groupData) {
+                    const variations = Object.keys(groupData).filter(key =>
+                        key.length === 1 && key.match(/[A-Z]/i)
+                    ).sort();
+                    setAvailableVariations(variations);
+                    setSelectedVariation('');
+                    setSelectedPlayStats(null);
+                } else {
+                    setAvailableVariations([]);
+                    setSelectedVariation('');
+                }
+            }
+        }, [selectedPlayGroup, selectedPlayType, playData]);
+
+        // Load stats for the selected play
+        useEffect(() => {
+            if (selectedPlayType && selectedPlayGroup && selectedVariation && playData) {
+                const stats = playData[selectedPlayType]?.[selectedPlayGroup]?.[selectedVariation];
+                setSelectedPlayStats(stats || null);
+            } 
+        }, [selectedVariation, selectedPlayGroup, selectedPlayType, playData]);
+
+        // Update success rate chart
+        useEffect(() => {
+            if (!selectedPlayStats || !successRateChartRef.current) return;
+            
+            const ctx = successRateChartRef.current.getContext('2d');
+
+            if (successRateChartInstance.current) {
+                successRateChartInstance.current.destroy();
+            }
+
+            // Getting raw counts for before calculating percentages
+            const totalCalls = parseInt(selectedPlayStats.NumCalls) || 1;
+            const madeFGCount = (parseInt(selectedPlayStats['+2']) || 0) +
+                               (parseInt(selectedPlayStats['+3']) || 0) +
+                               (parseInt(selectedPlayStats['+2F']) || 0) +
+                               (parseInt(selectedPlayStats['+3F']) || 0);
+            const missTOCount = (parseInt(selectedPlayStats['-2']) || 0) +
+                                (parseInt(selectedPlayStats['-3']) || 0) +
+                                (parseInt(selectedPlayStats['-2F']) || 0) +
+                                (parseInt(selectedPlayStats['-3F']) || 0);
+            const nothingCount = parseInt(selectedPlayStats.NOTHING) || 0;
+            const TOCount = parseInt(selectedPlayStats.TO) || 0;
+
+            // Calculate percentages
+            const madeFG = (madeFGCount / totalCalls) * 100;
+            const missTO = (missTOCount / totalCalls) * 100;
+            const nothing = (nothingCount / totalCalls) * 100;
+            const TO = (TOCount / totalCalls) * 100;
+
+            successRateChartInstance.current = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Made FG', 'Miss/TO', 'Nothing', 'Turnover'],
+                    datasets: [{
+                        data: [madeFG, missTO, nothing, TO],
+                        backgroundColor: [
+                            '#10B981', // Green for made
+                            '#EF4444', // Red for miss/TO
+                            '#6B7280', // Gray for nothing
+                            '#F59E0B', // Amber for turnover
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: darkMode ? '#fff' : '#374151',
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }, [selectedPlayStats, darkMode]);
+
+        // Update point distribution chart
+        useEffect(() => {
+            if (!selectedPlayStats || !pointDistributionChartRef.current) return;
+
+                const ctx = pointDistributionChartRef.current.getContext('2d');
+                
+                if (pointDistributionChartInstance.current) {
+                    pointDistributionChartInstance.current.destroy();
+                }
+
+                const points = [
+                    { label: '3pt', value: parseInt(selectedPlayStats['+3'] || 0) },
+                    { label: '2pt', value: parseInt(selectedPlayStats['+2'] || 0) },
+                    { label: 'No Score', value: parseInt(selectedPlayStats['-2'] || 0) + parseInt(selectedPlayStats['-3'] || 0) },
+                    { label: '3pt + Foul', value: parseInt(selectedPlayStats['+3F'] || 0) },
+                    { label: '2pt + Foul', value: parseInt(selectedPlayStats['+2F'] || 0) },
+                    { label: 'Miss + Foul', value: parseInt(selectedPlayStats['-2F'] || 0) + parseInt(selectedPlayStats['-3F'] || 0) }
+                ];
+
+                pointDistributionChartInstance.current = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: points.map(p => p.label),
+                        datasets: [{
+                            label: 'Occurrences',
+                            data: points.map(p => p.value),
+                            backgroundColor: '#3B82F6'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: darkMode ? '#9CA3AF' : '#6B7280',
+                                    stepSize: 1
+                                },
+                                grid: {
+                                    color: darkMode ? '#374151' : '#E5E7EB'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: darkMode ? '#9CA3AF' : '#6B7280'
+                                },
+                                grid: {
+                                    color: darkMode ? '#374151' : '#E5E7EB'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+        }, [selectedPlayStats, darkMode]);
+
+        // Update point distribution chart
+        useEffect(() => {
+            if(!selectedPlayStats || !pointDistributionChartRef.current) return;
+
+                const ctx = pointDistributionChartRef.current.getContext('2d');
+                
+                if (pointDistributionChartInstance.current) {
+                    pointDistributionChartInstance.current.destroy();
+                }
+
+                const points = [
+                    { label: '3pt', value: parseInt(selectedPlayStats['+3'] || 0) },
+                    { label: '2pt', value: parseInt(selectedPlayStats['+2'] || 0) },
+                    { label: 'No Score', value: parseInt(selectedPlayStats['-2'] || 0) + parseInt(selectedPlayStats['-3'] || 0) },
+                    { label: '3pt + Foul', value: parseInt(selectedPlayStats['+3F'] || 0) },
+                    { label: '2pt + Foul', value: parseInt(selectedPlayStats['+2F'] || 0) },
+                    { label: 'Miss + Foul', value: parseInt(selectedPlayStats['-2F'] || 0) + parseInt(selectedPlayStats['-3F'] || 0) }
+                ];
+
+                pointDistributionChartInstance.current = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: points.map(p => p.label),
+                        datasets: [{
+                            label: 'Occurrences',
+                            data: points.map(p => p.value),
+                            backgroundColor: '#3B82F6'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: darkMode ? '#9CA3AF' : '#6B7280',
+                                    stepSize: 1
+                                },
+                                grid: {
+                                    color: darkMode ? '#374151' : '#E5E7EB'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: darkMode ? '#9CA3AF' : '#6B7280'
+                                },
+                                grid: {
+                                    color: darkMode ? '#374151' : '#E5E7EB'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });      
+        }, [selectedPlayStats, darkMode]);
+
+        const PlayStatsCard = ({ stats }) => {
+            if (!stats) return null;
+            
+            // Need to fix avgPoints
+            const totalPoints = (parseInt(stats['+2']) || 0) * 2 +
+                                (parseInt(stats['+3']) || 0) * 3 +
+                                (parseInt(stats['+2F']) || 0) * 2 +
+                                (parseInt(stats['+3F']) || 0) * 3;
+            const numCalls = parseInt(stats.numCalls || stats.NumCalls) || 1;
+            const avgPoints = numCalls > 0 ? totalPoints / numCalls : 0;
+            
+            // Calculate FG% from raw counts
+            const madeFGCount = (parseInt(stats['+2']) || 0) +
+                               (parseInt(stats['+3']) || 0) +
+                               (parseInt(stats['+2F']) || 0) +
+                               (parseInt(stats['+3F']) || 0);
+            const fgPct = (madeFGCount / numCalls) * 100;
+
+            return (
+                    <div className={`rounded-lg shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} p-6`}>
+                        <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                            {`Play ${selectedPlayType}-${selectedPlayGroup}${selectedVariation}`}
+                        </h3>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div>
+                                <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Avg Points</div>
+                                <div className={`text-2xl font-bold ${avgPoints > 1 ? 'text-green-500' : avgPoints < 0.5 ? 'text-red-500' : 'text-blue-500'}`}>
+                                    {avgPoints.toFixed(2)}
+                                </div>
+                            </div>
+                            <div>
+                                <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Times Called</div>
+                                <div className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{numCalls}</div>
+                            </div>
+                            <div>
+                                <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>FG %</div>
+                                <div className={`text-2xl font-bold ${fgPct > 40 ? 'text-green-500' : fgPct < 30 ? 'text-red-500' : 'text-blue-500'}`}>
+                                    {fgPct.toFixed(1)}%
+                                </div>
+                            </div>
+                            <div>
+                                <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Fouls on FGs</div>
+                                <div className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{stats.FOF || 0}</div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 className={`text-md font-semibold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                                    Outcome Distribution
+                                </h4>
+                                <div style={{ height: '250px' }}>
+                                    <canvas ref={successRateChartRef}></canvas>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 className={`text-md font-semibold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                                    Scoring Breakdown
+                                </h4>
+                                <div style={{ height: '250px' }}>
+                                    <canvas ref={pointDistributionChartRef}></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+        const PlayTypeOverview = () => {
+            if (!playData) return null;
+
+            const playTypeSummary = {};
+
+            // Calculate summary for each play type
+            Object.entries(playData).forEach(([type, groups]) => {
+                let totalCalls = 0;
+                let totalPoints = 0;
+                let totalMadeFG = 0;
+                let playCount = 0;
+                
+                Object.values(groups).forEach(group => {
+                    Object.values(group).forEach(variation => {
+                        const calls = parseInt(variation.numCalls || variation.NumCalls) || 0;
+                        if (calls > 0) {
+                            totalCalls += calls;
+                            
+                            // Calculate total points from raw counts
+                            const totalPointCount = (parseInt(variation['+2']) || 0) * 2 +
+                                                (parseInt(variation['+3']) || 0) * 3 +
+                                                (parseInt(variation['+2F']) || 0) * 2 +
+                                                (parseInt(variation['+3F']) || 0) * 3;
+
+                            totalPoints += totalPointCount;
+
+                            // Calculate made FG from raw counts
+                            const madeFGCount = (parseInt(variation['+2']) || 0) +
+                                               (parseInt(variation['+3']) || 0) +
+                                               (parseInt(variation['+2F']) || 0) +
+                                               (parseInt(variation['+3F']) || 0);
+                            totalMadeFG += madeFGCount;
+                            playCount++;
+                        }
+                    });
+                });
+
+                if (totalCalls > 0) {
+                    playTypeSummary[type] = {
+                        name: playTypeNames[type] || `Type ${type}`,
+                        totalCalls,
+                        avgPoints: totalPoints / totalCalls,
+                        fgPct: (totalMadeFG / totalCalls) * 100,
+                        playCount
+                    };
+                }
+            });
+
+            return (
+                    <div className={`rounded-lg shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} mb-6`}>
+                        <div className="p-4 border-b">
+                            <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Play Type Overview</h2>
+                        </div>
+                        <div className="p-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {Object.entries(playTypeSummary).map(([type, summary]) => (
+                                    <div key={type} className="relative">
+                                        <div
+                                            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                                                selectedPlayType === type 
+                                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                                                    : expandedPlayType === type
+                                                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                                                    : darkMode ? 'border-gray-700 hover:border-gray-600' : 'border-gray-200 hover:border-gray-300'
+                                            }`}
+                                            onClick={() => {
+                                                setSelectedPlayType(type);
+                                                setExpandedPlayType(expandedPlayType === type ? '' : type);
+                                            }}
+                                        >
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h3 className={`font-semibold ${
+                                                    (selectedPlayType == type || expandedPlayType == type) && !darkMode 
+                                                    ? 'text-gray-800' 
+                                                    : (selectedPlayType == type || expandedPlayType == type) && darkMode
+                                                    ? 'text-black'
+                                                    : darkMode
+                                                    ? 'text-gray-200'
+                                                    : 'text-gray-900'
+                                                }`}>{summary.name}</h3>
+                                                <span className={`text-xs px-2 py-1 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+                                                    {summary.playCount} plays
+                                                </span>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <div className="flex justify-between">
+                                                    <span className={`text-sm ${
+                                                        (selectedPlayType === type || expandedPlayType === type) && !darkMode 
+                                                        ? 'text-gray-600'
+                                                        : (selectedPlayType === type || expandedPlayType === type) && darkMode
+                                                        ? 'text-gray-900'
+                                                        : darkMode
+                                                        ? 'text-gray-400' 
+                                                        : 'text-gray-600'
+                                                    }`}>Times Called:</span>
+                                                    <span className={`text-sm font-medium ${
+                                                        (selectedPlayType === type || expandedPlayType === type) && !darkMode
+                                                        ? 'text-gray-800'
+                                                        : (selectedPlayType === type || expandedPlayType === type) && darkMode
+                                                        ? 'text-black'
+                                                        : darkMode 
+                                                        ? 'text-gray-200' 
+                                                        : 'text-gray-800'
+                                                    }`}>{summary.totalCalls}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className={`text-sm ${
+                                                        (selectedPlayType === type || expandedPlayType === type) && !darkMode
+                                                        ? 'text-gray-600'
+                                                        : (selectedPlayType === type || expandedPlayType === type) && darkMode
+                                                        ? 'text-gray-900'
+                                                        : darkMode
+                                                        ? 'text-gray-400' 
+                                                        : 'text-gray-600'
+                                                    }`}>Avg Points:</span>
+                                                    <span className={`text-sm font-medium ${summary.avgPoints > 1 ? 'text-green-500' : 'text-blue-500'}`}>
+                                                        {summary.avgPoints.toFixed(2)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className={`text-sm ${
+                                                        (selectedPlayType === type || expandedPlayType === type) && !darkMode
+                                                        ? 'text-gray-600'
+                                                        : (selectedPlayType === type || expandedPlayType === type) && darkMode
+                                                        ? 'text-gray-900'
+                                                        : darkMode
+                                                        ? 'text-gray-400' 
+                                                        : 'text-gray-600'
+                                                    }`}>FG%:</span>
+                                                    <span className={`text-sm font-medium ${summary.fgPct > 40 ? 'text-green-500' : 'text-blue-500'}`}>
+                                                        {summary.fgPct.toFixed(1)}%
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {expandedPlayType === type && (
+                                            <div className={`mt-3 p-4 rounded-lg border-2 ${darkMode ? 'bg-gray-900 border-gray-600' : 'bg-gray-50 border-gray-300'}`}>
+                                                <h4 className={`text-sm font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                                    Log Play Call
+                                                </h4>
+                                                
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <label className={`block text-xs font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                            Play Group
+                                                        </label>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {logAvailableGroups.map(group => (
+                                                                <button
+                                                                    key={group}
+                                                                    onClick={() => setLogPlayGroup(group)}
+                                                                    className={`px-3 py-1 text-sm rounded font-medium transition-colors ${
+                                                                        logPlayGroup === group 
+                                                                            ? 'bg-blue-600 text-white'
+                                                                            : darkMode
+                                                                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                    }`}
+                                                                    >
+                                                                    {group}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                    </div>
+                                                    
+                                                    {logPlayGroup && (
+                                                        <div>
+                                                            <label className={`block text-xs font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                                Variation
+                                                            </label>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {logAvailableVariations.map(variation => (
+                                                                    <button
+                                                                        key={variation}
+                                                                        onClick={() => setLogVariation(variation)}
+                                                                        className={`px-3 py-1 text-sm rounded font-medium transition-colors ${
+                                                                            logVariation === variation 
+                                                                                ? 'bg-blue-600 text-white'
+                                                                                : darkMode
+                                                                                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                        }`}
+                                                                    >
+                                                                        {variation}
+                                                                    </button>
+                                                                ))}
+                                                            </div>                                                                        
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {logVariation && (
+                                                        <div>
+                                                            <label className={`block text-xs font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                                Select Outcome
+                                                            </label>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <button
+                                                                    onClick={() => logPlayOutcome('+3')}
+                                                                    disabled={logging}
+                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
+                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
+                                                                    } bg-green-600 text-white hover:bg-green-700`}
+                                                                >
+                                                                    3pt Made
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => logPlayOutcome('+2')}
+                                                                    disabled={logging}
+                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
+                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
+                                                                    } bg-green-500 text-white hover:bg-green-600`}
+                                                                >
+                                                                    2pt Made
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => logPlayOutcome('-3')}
+                                                                    disabled={logging}
+                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
+                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
+                                                                    } bg-red-600 text-white hover:bg-red-700`}
+                                                                >
+                                                                    3pt Miss
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => logPlayOutcome('-2')}
+                                                                    disabled={logging}
+                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
+                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
+                                                                    } bg-red-500 text-white hover:bg-red-600`}
+                                                                >
+                                                                    2pt Miss
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => logPlayOutcome('+3F')}
+                                                                    disabled={logging}
+                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
+                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
+                                                                    } bg-green-600 text-white hover:bg-green-700`}
+                                                                >
+                                                                    3pt + Foul
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => logPlayOutcome('+2F')}
+                                                                    disabled={logging}
+                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
+                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
+                                                                    } bg-green-500 text-white hover:bg-green-600`}
+                                                                >
+                                                                    2pt + Foul
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => logPlayOutcome('-3F')}
+                                                                    disabled={logging}
+                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
+                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
+                                                                    } bg-red-600 text-white hover:bg-red-700`}
+                                                                >
+                                                                    3pt Miss + Foul
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => logPlayOutcome('-2F')}
+                                                                    disabled={logging}
+                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
+                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
+                                                                    } bg-red-500 text-white hover:bg-red-600`}
+                                                                >
+                                                                    2pt Miss + Foul
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => logPlayOutcome('TO')}
+                                                                    disabled={logging}
+                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
+                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
+                                                                    } bg-yellow-600 text-white hover:bg-yellow-700`}
+                                                                >
+                                                                    Turnover
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => logPlayOutcome('NOTHING')}
+                                                                    disabled={logging}
+                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
+                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
+                                                                    } ${darkMode ? 'bg-gray-600 text-white hover:bg-gray-700' : 'bg-gray-400 text-white hover:bg-gray-500'}`}
+                                                                >
+                                                                    Nothing
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            if (loading) {
+                return (
+                    <div className="max-w-7xl mx-auto p-4">
+                        <div className="animate-pulse space-y-4">
+                            <div className="h-16 bg-gray-300 rounded"></div>
+                            <div className="h-64 bg-gray-300 rounded"></div>
+                            <div className="h-96 bg-gray-300 rounded"></div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="max-w-7xl mx-auto p-4">
+                    <div className={`rounded-lg shadow-md p-4 mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <img 
+                                src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Virginia_Tech_Hokies_logo.svg/2560px-Virginia_Tech_Hokies_logo.svg.png" 
+                                alt="Virgnia Tech Logo" 
+                                className="w-35 h-20 rounded-lg"
+                            />
+                            <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                Virginia Tech Basketball Play Calling Analytics
+                            </h1>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <select
+                                    value={selectedYear}
+                                    onChange={(e) => setSelectedYear(e.target.value)}
+                                    className={`px-3 py-2 border rounded-md ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                                >
+                                    {availableYears.length > 0 ? 
+                                        availableYears.map(year => (
+                                            <option key={year} value={year}>{year} Season</option>
+                                        )) : 
+                                        <option value={selectedYear}>{selectedYear} Season</option>
+                                    }
+                                </select>
+                                
+                                <input
+                                    type="date"
+                                    value={selectedDate}
+                                    onChange={(e) => setSelectedDate(e.target.value)}
+                                    className={`px-3 py-2 border rounded-md ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                                />
+                                
+                                <button
+                                    onClick={loadPlayData}
+                                    className={`px-4 py-2 rounded-md transition-colors ${darkMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                                >
+                                    Refresh
+                                </button>
+                                
+                                <button
+                                    onClick={() => setDarkMode(prev => !prev)}
+                                    className={`px-3 py-2 rounded-md transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                                >
+                                    {darkMode ? '☀️ Light' : '🌙 Dark'}
+                                </button>
+                            </div>
+                        </div>
+                        {lastUpdated && (
+                            <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
+                                Last updated: {lastUpdated}
+                            </div>
+                        )}
+                    </div>
+
+                    <PlayTypeOverview />
+
+                    <div className={`rounded-lg shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} mb-6`}>
+                        <div className="p-4 border-b">
+                            <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Play Selection</h2>
+                        </div>
+                        <div className="p-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                        Play Type
+                                    </label>
+                                    <select
+                                        value={selectedPlayType}
+                                        onChange={(e) => setSelectedPlayType(e.target.value)}
+                                        className={`w-full px-3 py-2 border rounded-md ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                                    >
+                                        <option value="">Select Type</option>
+                                        {Object.keys(playTypeNames).map(type => (
+                                            <option key={type} value={type}>
+                                                {type} - {playTypeNames[type]}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                        Play Group
+                                    </label>
+                                    <select
+                                        value={selectedPlayGroup}
+                                        onChange={(e) => setSelectedPlayGroup(e.target.value)}
+                                        disabled={!selectedPlayType}
+                                        className={`w-full px-3 py-2 border rounded-md ${
+                                            !selectedPlayType ? 'opacity-50 cursor-not-allowed' : ''
+                                        } ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                                    >
+                                        <option value="">
+                                            {availableGroups.length > 0 ? 'Select Group' : 'Select Type First'}
+                                        </option>
+                                        {availableGroups.map(group => (
+                                            <option key={group} value={group}>{group}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                        Variation
+                                    </label>
+                                    <select
+                                        value={selectedVariation}
+                                        onChange={(e) => setSelectedVariation(e.target.value)}
+                                        disabled={!selectedPlayGroup}
+                                        className={`w-full px-3 py-2 border rounded-md ${
+                                            !selectedPlayGroup ? 'opacity-50 cursor-not-allowed' : ''
+                                        } ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                                    >
+                                        <option value="">
+                                            {availableVariations.length > 0 ? 'Select Variation' : 'Select Group First'}
+                                        </option>
+                                        {availableVariations.map(variation => (
+                                            <option key={variation} value={variation}>
+                                                Variation {variation}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {selectedPlayStats && <PlayStatsCard stats={selectedPlayStats} />}
+                </div>
+            );
+        };
+
+        ReactDOM.render(<PlayCallingDashboard />, document.getElementById('root'));
     </script>
-
-    <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
-
-</body>
-
-<body class="dark-mode">
 
 </body>
 
