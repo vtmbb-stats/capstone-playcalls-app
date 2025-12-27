@@ -39,6 +39,376 @@
             background-color: #f9fafb !important;
             color: #111827; /* Light mode text color */
         }
+
+        @keyframes slide-down {
+            from {
+                transform: translate(-50%, -100%);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+        }
+
+        .animate-slide-down {
+            animation: slide-down 0.5s ease-out forwards;
+        }
+
+        /* Added options to optimize iPad functionality */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            button {
+                min-height: 64px;
+                font-size: 1.125rem;
+                padding: 1.5rem 1rem;
+            }
+        }
+
+        /* Larger for desktop */
+        @media (min-width: 1025px) {
+            button {
+                min-height: 72px;
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Possession Counter style */
+        .possession-counter {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem; 
+            padding: 0.5rem 0.75rem;
+            background: linear-gradient(135deg, #9eb4d6 0%, #98b4f2 100%);
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            min-height: 40px;
+        }
+
+        .possession-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .possession-value {
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+
+        .possession-controls {
+            display: flex;
+            gap: 2px;
+            margin-top: 2px;
+        }
+
+        .possession-btn {
+            width: 30px; /* Adjust button size */
+            height: 30px;
+            min-width: 24px;
+            min-height: 24px;
+            padding: 0;
+            flex-shrink: 0;
+            background: rgba(45, 223, 13, 0.959);
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95em;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            line-height: 1;
+        }
+
+        .possession-btn2 {
+            width: 30px; /* Adjust button size */
+            height: 30px;
+            min-width: 24px;
+            min-height: 24px;
+            padding: 0;
+            flex-shrink: 0;
+            background: rgba(246, 23, 23, 0.959);
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95em;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            line-height: 1;
+        }
+
+        .possession-btn:hover {
+            background: rgba(109, 237, 87, 0.908);
+        }
+
+        .possession-btn2:hover {
+            background: rgba(247, 52, 52, 0.959);
+        }
+
+        .possession-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Add Play Button */
+        .add-play-btn {
+            width: 100%;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: #642667;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px #642667;
+        }
+
+        .add-play-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px #562159;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s;
+        }
+
+        .dark-mode .modal {
+            background: #1f2937;
+            color: #f9fafb;
+        }
+
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .dark-mode .modal-header {
+            border-bottom-color: #374151;
+        }
+
+        .modal-title {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: #f1f5f9;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .dark-mode .modal-close {
+            background: #374151;
+            color: #f9fafb;
+        }
+
+        .modal-close:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        .modal-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-tab {
+            flex: 1;
+            padding: 0.75rem;
+            background: #f1f5f9;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s;
+            color: #64748b;
+        }
+
+        .dark-mode .modal-tab {
+            background: #374151;
+            color: #9ca3af;
+        }
+
+        .modal-tab.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .modal-tab:hover:not(.active) {
+            background: #e2e8f0;
+        }
+
+        .dark-mode .modal-tab:hover:not(.active) {
+            background: #4b5563;
+        }
+
+        .modal-content {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-primary {
+            flex: 1;
+            padding: 0.875rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.05em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            padding: 0.875rem 1.5rem;
+            background: #f1f5f9;
+            color: #64748b;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .dark-mode .btn-secondary {
+            background: #374151;
+            color: #9ca3af;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .dark-mode .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .dark-mode .form-group label {
+            color: #d1d5db;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background: white;
+            color: #111827;
+        }
+
+        .dark-mode .form-group input,
+        .dark-mode .form-group select {
+            background: #374151;
+            border-color: #4b5563;
+            color: #f9fafb;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .helper-text {
+            font-size: 0.85em;
+            color: #64748b;
+            margin-top: 0.5rem;
+        }
+
+        .dark-mode .helper-text {
+            color: #9ca3af;
+        }
+
+
     </style>
 </head>
 <body class="dark-mode">
@@ -77,142 +447,463 @@
         <script type="text/babel">
         const { useState, useCallback, useEffect, useRef } = React;
 
-        // Play type definitions
-        const playTypeNames = {
-            '1': 'Zone Offense', // for example, can change to actual names
-            '2': 'Man Offense',
-            '3': 'Transition',
-            '4': 'Special Plays',
-            '5': 'Out of Bounds',
-            '6': 'Press Break'
+        // Defauktt Schedule (if none in Firebase)
+        const DEFAULT_SCHEDULE = [
+            {
+                id: 'game-001',
+                date: '2025-11-04',
+                opponent: 'vs Charleston Southern',
+                location: 'Home',
+                time: '7:00 PM',
+                conference: 'Non-Conference',
+                displayName: '11/04 vs Charleston Southern'
+            },
+            {
+                id: 'game-002',
+                date: '2025-11-05',
+                opponent: 'vs UNC',
+                location: 'Home',
+                time: '8:00 PM',
+                conference: 'ACC',
+                displayName: '11/05 vs UNC (Home) - 8:00 PM'
+            },
+            {
+                id: 'practice',
+                date: 'practice',
+                opponent: 'Practice',
+                location: 'Home',
+                time: '',
+                conference: 'Non-Conference',
+                displayName: 'Practice (No Game)'
+            }
+        ];
+
+        // Game Info Header Component (under the main header)
+        const GameInfoHeader = ({ selectedGame, darkMode }) => {
+            if (!selectedGame) {
+                return (
+                    <div className={`p-4 rounded-lg mb-4 text-center ${
+                        darkMode ? 'bg-red-900/20 border border-red-700' : 'bg-red-50 border border-red-200'
+                    }`}>
+                        <span className={`text-sm font-medium ${darkMode ? 'text-red-400' : 'text-red-600'}`}>
+                             No game selected - Please select a game above
+                        </span>
+                    </div>
+                );
+            }
+
+            if (selectedGame.date === 'practice') {
+                return (
+                    <div className={`p-2 rounded-lg mb-4 ${
+                        darkMode ? 'bg-yellow-900/20 border-2 border-yellow-700' : 'bg-yellow-50 border-2 border-yellow-200'
+                    }`}>
+                        <div className="flex items-center justify-center gap-3">
+                            <span className="text-lg">🏋️</span>
+                            <span className={`text-base font-medium ${darkMode ? 'text-yellow-400' : 'text-yellow-700'}`}>
+                                Practice Mode - Stats only (no possession logging)
+                            </span>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className={`p-4 rounded-lg mb-4 ${
+                    darkMode ? 'bg-blue-900/20 border border-blue-700' : 'bg-blue-50 border border-blue-200'
+                }`}>
+                    <div className="flex items-center justify-center gap-4 text-base">
+                        <span className={`font-semibold ${darkMode ? 'text-blue-400' : 'text-blue-700'}`}>
+                             {selectedGame.date}
+                        </span>
+                        <span className={`font-bold ${darkMode ? 'text-blue-300' : 'text-blue-800'}`}>
+                            {selectedGame.opponent}
+                        </span>
+                        <span className={`${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                            {selectedGame.location}
+                        </span>
+                        {selectedGame.time && (
+                            <span className={`${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                {selectedGame.time}
+                            </span>
+                        )}
+                    </div>
+                </div>
+            );
         };
 
         const PlayCallingDashboard = () => {
             const [darkMode, setDarkMode] = useState(false);
-            const [selectedYear, setSelectedYear] = useState('2024'); // For Viewing data
-            const [loggingYear, setLoggingYear] = useState('2025'); // For logging data
-            const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+            const [selectedYear, setSelectedYear] = useState('2025'); // For Viewing data
             const [loading, setLoading] = useState(true);
             const [lastUpdated, setLastUpdated] = useState(null);
             const [playData, setPlayData] = useState(null);
             const [availableYears, setAvailableYears] = useState([]);
-
-            // Play Selections Stats
-            const [selectedPlayType, setSelectedPlayType] = useState('');
-            const [selectedPlayGroup, setSelectedPlayGroup] = useState('');
-            const [selectedVariation, setSelectedVariation] = useState('');
-            const [availableGroups, setAvailableGroups] = useState([]);
-            const [availableVariations, setAvailableVariations] = useState([]);
-            const [selectedPlayStats, setSelectedPlayStats] = useState(null);
-
-            // Chart refs
-            const successRateChartRef = useRef(null);
-            const successRateChartInstance = useRef(null);
-            const pointDistributionChartRef = useRef(null);
-            const pointDistributionChartInstance = useRef(null);
-
-            // Logging interface state
-            const [expandedPlayType, setExpandedPlayType] = useState('');
-            const [logPlayGroup, setLogPlayGroup] = useState('');
-            const [logVariation, setLogVariation] = useState('');
-            const [logAvailableGroups, setLogAvailableGroups] = useState([]);
-            const [logAvailableVariations, setLogAvailableVariations] = useState([]);
+            const [possessionCount, setPossessionCount] = useState(1);
+            // New State Variables
+            const [currentPeriod, setCurrentPeriod] = useState('1st Half');
+            const [gameSchedule, setGameSchedule] = useState([]);
+            const [selectedGame, setSelectedGame] = useState(null);
             const [logging, setLogging] = useState(false);
+
+            // Adding New State Variables for New Features
+            const [globalSearch, setGlobalSearch] = useState('');
+            const [recentPlays, setRecentPlays] = useState([]);
+            const [selectedPlay, setSelectedPlay] = useState(null);
+            const [showUndo, setShowUndo] = useState(false);
+            const [lastLoggedPlay, setLastLoggedPlay] = useState(null);
+
+            // Added new state variables for possessions and adding plays
+            // const [possessionCount, setPossessionCount] = useState(0); (wont use for now)
+            const [manualPossessionAdjustment, setManualPossessionAdjustment] = useState(0);
+            const [showAddPlayModal, setShowAddPlayModal] = useState(false);
+            const [showFreeThrowModal, setShowFreeThrowModal] = useState(false);
+            const [freeThrowData, setFreeThrowData] = useState({
+                outcome: null,
+                made: 0,
+                attempts: 0
+            });
+
 
             // Update body class when dark mode changes
             useEffect(() => {
                 document.body.className = darkMode ? 'dark-mode' : 'light-mode';
             }, [darkMode]);
 
-            // Update log available groups when expanded play type changes
-            useEffect(() => {
-                if (playData && expandedPlayType && playData[expandedPlayType]) {
-                    const groups = Object.keys(playData[expandedPlayType]).sort();
-                    setLogAvailableGroups(groups);
-                    setLogPlayGroup('');
-                    setLogVariation('');
-                    setLogAvailableVariations([]);
-                } else {
-                    setLogAvailableGroups([]);
-                    setLogPlayGroup('');
-                    setLogVariation('');
-                    setLogAvailableVariations([]);
-                }
-            }, [expandedPlayType, playData]);
+            // Function to get all plays as flat list for searching
+            const getAllPlays = useCallback(() => {
+                if (!playData) return [];
+                const plays = [];
 
-            // Update log available variations when log play group changes
-            useEffect(() => {
-                if (expandedPlayType && logPlayGroup && playData) {
-                    const groupData = playData[expandedPlayType]?.[logPlayGroup];
-                    if (groupData) {
-                        const variations = Object.keys(groupData).filter(key =>
-                            key.length === 1 && key.match(/[A-Z]/i)
-                        ).sort();
-                        setLogAvailableVariations(variations);
-                        setLogVariation('');
+                Object.entries(playData).forEach(([seriesName, playsInSeries]) => {
+                    Object.entries(playsInSeries).forEach(([playName, playData]) => {
+                        plays.push({
+                            id: `${seriesName}-${playName}`,
+                            series: seriesName,
+                            playName: playName,
+                            fullName: `${seriesName} ${playName}`,
+                            displayName: `${seriesName} ${playName}`,
+                            data: playData
+                        });
+                    });
+                });
+
+                return plays;
+            }, [playData]);
+
+            const filterPlays = useCallback((query, typeId = null) => {
+                if (!query) return [];
+
+                const allPlays = getAllPlays();
+                const searchLower = query.toLowerCase();
+
+                return allPlays.filter(play => {
+                    if (typeId && play.typeId !== typeId) return false;
+
+                    return (
+                        play.fullName.toLowerCase().includes(searchLower) ||
+                        play.displayName.toLowerCase().includes(searchLower) ||
+                        play.id.toLowerCase().includes(searchLower)
+                    );
+                });
+            }, [getAllPlays]);
+
+            // Updates recent plays list
+            const updateRecentPlays = useCallback((playId, outcome) => {
+                setRecentPlays(prev => {
+                    const filtered = prev.filter(p => p.id !== playId);
+                    const play = getAllPlays().find(p => p.id === playId);
+                    if (!play) return prev;
+                    
+                    const existingPlay = prev.find(p => p.id === playId);
+                    return [{
+                        ...play, 
+                        count: (existingPlay?.count || 0) + 1,
+                        lastOutcome: outcome
+                    }, ...filtered];
+                });
+            }, [getAllPlays]);
+            
+            // Load game schedule from Firebase
+            const loadGameSchedule = useCallback(() => {
+                const scheduleRef = database.ref(`playcalls/${selectedYear}/schedule`);
+                
+                // Real-time listener for schedule changes
+                const listener = scheduleRef.on('value', (snapshot) => {
+                    if (snapshot.exists()) {
+                        const scheduleData = snapshot.val();
+                        
+                        // Convert Firebase object to array
+                        const scheduleArray = Object.values(scheduleData);
+                        
+                        // Sort: games by date, practice at end
+                        scheduleArray.sort((a, b) => {
+                            if (a.date === 'practice') return 1;
+                            if (b.date === 'practice') return -1;
+                            return new Date(a.date) - new Date(b.date);
+                        });
+                        
+                        setGameSchedule(scheduleArray);
+                        console.log(`Loaded ${scheduleArray.length} games from Firebase`);
                     } else {
-                        setLogAvailableVariations([]);
-                        setLogVariation('');
+                        // No schedule in Firebase, use default
+                        console.log('No schedule in Firebase, using default');
+                        setGameSchedule(DEFAULT_SCHEDULE);
                     }
-                }
-            }, [logPlayGroup, expandedPlayType, playData]);
+                }, (error) => {
+                    console.error('Error loading schedule:', error);
+                    setGameSchedule(DEFAULT_SCHEDULE);
+                });
+                
+                // Cleanup function
+                return () => {
+                    scheduleRef.off('value', listener);
+                };
+            }, [selectedYear]);
 
+            // Load schedule when year changes
+            useEffect(() => {
+                const cleanup = loadGameSchedule();
+                return cleanup;
+            }, [loadGameSchedule]);
 
             // Log a play outcome to Firebase
-            const logPlayOutcome = async (outcome) => {
-                if (!expandedPlayType || !logPlayGroup || !logVariation) {
-                    alert('Please select play type, group, and variation');
+            const logPlayOutcome = async (outcome, ftMade = null) => {
+                if (!selectedPlay) {
+                    alert('Please select a play first');
                     return;
                 }
+
+                if (!selectedGame) {
+                    alert('Please select a game first');
+                    return;
+                }
+
+                const needsFreeThrows = ['+2F', '+3F', '-2F', '-3F', 'Foul_Bonus'].includes(outcome);
+
+                if (needsFreeThrows && ftMade === null) {
+                    let attempts = 2;
+                    if (outcome === '+2F' || outcome === '+3F') {
+                        attempts = 1;
+                    } else if (outcome === '-3F') {
+                        attempts = 3;
+                    } else if (outcome === '-2F') {
+                        attempts = 2;
+                    } else if (outcome === 'Foul_Bonus') {
+                        attempts = 2;
+                    }
+
+
+                    setFreeThrowData({
+                        outcome: outcome, 
+                        made: 0, 
+                        attempts: attempts
+                    });
+                    setShowFreeThrowModal(true);
+                    return;
+                }
+
+                const actualFtMade = ftMade === null ? 0 : ftMade;
 
                 try {
                     setLogging(true);
                     
-                    // Get current data from Firebase
-                    const playPath = `playcalls/${loggingYear}/${expandedPlayType}/${logPlayGroup}/${logVariation}`;
-                    const playRef = database.ref(playPath);
-                    const snapshot = await playRef.once('value');
-                    const currentData = snapshot.val() || {
-                        '-3': 0, '-2': 0, '+2': 0, '+2F': 0, '+3': 0, '+3F': 0,
-                        '-2F': 0, '-3F': 0, 'AvgPointsNoFTs': 0, 'FOF': 0,
-                        'MadeFG': 0, 'MissTO': 0, 'NOTHING': 0, 'NumCalls': 0, 'TO': 0
-                    };
+                    // Handle special types (transition, no play, what's next)
+                    let statsPath = null;
+                    let statsRef = null;
+                    let currentData = null;
+                    let updates = null;
+                    
+                    // ALL plays get stats now (including special types)
+                    if (selectedPlay.type === 'transition') {
+                        statsPath = `playcalls/${selectedYear}/stats/series/Transition/1`;
+                    } else if (selectedPlay.type === 'no_play') {
+                        statsPath = `playcalls/${selectedYear}/stats/series/NoPlay/1`;
+                    } else if (selectedPlay.type === 'whats_next') {
+                        statsPath = `playcalls/${selectedYear}/stats/series/WhatsNext/1`;
+                    } else {
+                        // Regular playcall
+                        statsPath = `playcalls/${selectedYear}/stats/series/${selectedPlay.series}/${selectedPlay.playName}`;
+                    }    
+                        // Regular playcall - update stats
+                        statsRef = database.ref(statsPath);
+                        const snapshot = await statsRef.once('value');
+                        const defaultStats = {
+                            '-3': 0, '-2': 0, '+2': 0, '+2F': 0, '+3': 0, '+3F': 0,
+                            '-2F': 0, '-3F': 0,
+                            'NOTHING': 0, 'TO': 0,
 
-                    // Increment the specific outcome
-                    const updates = { ...currentData };
+                            // fouls
+                            'Foul_Floor': 0,
+                            'Foul_Bonus': 0,
+                            'FOF': 0,
+
+                            // counters
+                            NumCalls: 0,
+                            MadeFG: 0,
+                            MissTO: 0,
+
+                            // free throw stats
+                            FT_Made: 0,
+                            FT_Att: 0,
+
+                            // calculated metrics
+                            PPP: 0,
+                            AvgPointsNoFTs: 0,
+                            FoulRate: 0,
+                            FreeThrowRate: 0
+                        };
+
+                        currentData = snapshot.val() || defaultStats;
+
+                        // Merge with defaults to ensure ALL fields always exist
+                        currentData = { ...defaultStats, ...currentData };
+
+                    updates = { ...currentData };
+
+                    // Increment outcome-specific counter
                     updates[outcome] = (parseFloat(currentData[outcome]) || 0) + 1;
                     updates.NumCalls = (parseInt(currentData.NumCalls) || 0) + 1;
 
-                    updates.timestamp = new Date().toISOString();
+                    // Track FT makes & attempts for this play
+                    if (!updates.FT_Made) updates.FT_Made = 0;
+                    if (!updates.FT_Att) updates.FT_Att = 0;
 
-                    // Recalculate percentages and averages
-                    const totalCalls = updates.NumCalls;
-                    const totalPoints = (updates['+2'] * 2) + (updates['+3'] * 3) + 
-                                    (updates['+2F'] * 2) + (updates['+3F'] * 3);
-                    updates.AvgPointsNoFTs = totalPoints / totalCalls;
+                    updates.FT_Made += actualFtMade;
 
-                    const madeFG = updates['+2'] + updates['+3'] + updates['+2F'] + updates['+3F'];
-                    updates.MadeFG = madeFG / totalCalls;
+                    if (needsFreeThrows) {
+                        updates.FT_Att += freeThrowData.attempts;
+                    }
 
-                    const missTO = updates['-2'] + updates['-3'] + updates['-2F'] + updates['-3F'];
-                    updates.MissTO = missTO / totalCalls;
+                    // Compute total points (INCLUDING FTs)
+                    let totalFGPoints =
+                        (updates['+2'] * 2) +
+                        (updates['+3'] * 3) +
+                        (updates['+2F'] * 2) +
+                        (updates['+3F'] * 3);
 
-                    updates.NOTHING = updates.NOTHING / totalCalls;
-                    updates.TO = updates.TO / totalCalls;
+                    // Add cumulative FT makes
+                    let totalFTPoints = updates.FT_Made;
 
-                    updates.FOF = updates['+2F'] + updates['+3F'] + updates['-2F'] + updates['-3F'];
+                    let totalPoints = totalFGPoints + totalFTPoints;
 
-                    // Save to Firebase
-                    await playRef.set(updates);
+                    // Update PPP (with free throws)
+                    updates.PPP = totalPoints / updates.NumCalls;
 
-                    // Reload data
+                    // Maintain old metric (PPP excluding FTs)
+                    updates.AvgPointsNoFTs = totalFGPoints / updates.NumCalls;
+
+                    // Field goal success/ failure rates
+                    const madeFG =
+                        (updates['+2'] || 0) +
+                        (updates['+3'] || 0) +
+                        (updates['+2F'] || 0) +
+                        (updates['+3F'] || 0);
+
+                    const missTO =
+                        (updates['-2'] || 0) +
+                        (updates['-3'] || 0) +
+                        (updates['-2F'] || 0) +
+                        (updates['-3F'] || 0) +
+                        (updates.TO || 0);
+
+                    updates.MadeFG = madeFG / updates.NumCalls;
+                    updates.MissTO = missTO / updates.NumCalls;
+
+                    // Foul-related metrics
+                    const shootingFouls =
+                        (updates['+2F'] || 0) +
+                        (updates['+3F'] || 0) +
+                        (updates['-2F'] || 0) +
+                        (updates['-3F'] || 0) +
+                        (updates['Foul_Bonus'] || 0);
+
+                    const totalFouls = shootingFouls + (updates['Foul_Floor'] || 0);
+
+                    // Foul Rate: ANY foul
+                    updates.FoulRate = totalFouls / updates.NumCalls;
+
+                    // FT Rate: Shooting fouls that produce FT attempts
+                    updates.FreeThrowRate = shootingFouls / updates.NumCalls;
+
+                    // Keep existing FOF (fouls on FG shot attempts)
+                    updates.FOF =
+                        (updates['+2F'] || 0) +
+                        (updates['+3F'] || 0) +
+                        (updates['-2F'] || 0) +
+                        (updates['-3F'] || 0);
+
+                    await statsRef.set(updates);
+
+                    
+
+                    // Log to possessions (if not practice)
+                    if (selectedGame.date !== 'practice') {
+
+                        const possessionKey = `Possession${possessionCount.toString().padStart(3, '0')}`;
+                        const possessionRef = database.ref(
+                            `playcalls/${selectedYear}/games/${selectedGame.date}/possessions/${possessionKey}`
+                        );
+                        
+                        let points = 0;
+                        if (outcome === '+3' || outcome === '+3F') points = 3;
+                        else if (outcome === '+2' || outcome === '+2F') points = 2;
+                        points += actualFtMade;
+
+                        const possessionData = {
+                            possessionNumber: possessionCount,
+                            outcome: outcome,
+                            period: currentPeriod,
+                            timestamp: Date.now(),
+                            dateTime: new Date().toISOString(),
+                            points: points,
+                            freeThrowsMade: actualFtMade,
+                            freeThrowsAttempted: freeThrowData.attempts || 0,
+                            madeShot: ['+2', '+3', '+2F', '+3F'].includes(outcome),
+                            foul: ['Foul_Floor', 'Foul_Bonus', '+2F', '+3F', '-2F', '-3F'].includes(outcome),
+                            turnover: outcome === 'TO',
+
+                            gameInfo: {
+                                opponent: selectedGame.opponent,
+                                location: selectedGame.location
+                            }
+                        };
+                        
+                        if (selectedPlay.type === 'transition') {
+                            possessionData.type = 'transition';
+                        } else if (selectedPlay.type === 'no_play') {
+                            possessionData.type = 'no_play';
+                        } else if (selectedPlay.type === 'whats_next') {
+                            possessionData.type = 'whats_next';
+                        } else {
+                            possessionData.type = 'playcall';
+                            possessionData.series = selectedPlay.series;
+                            possessionData.playName = selectedPlay.playName;
+                            possessionData.fullName = selectedPlay.fullName;
+                        }
+                        
+                        await possessionRef.set(possessionData);
+                        setPossessionCount(prev => prev + 1);
+                    }
+
+                    setLastLoggedPlay({
+                        statsPath,
+                        previousData: currentData,
+                        playInfo: selectedPlay,
+                        outcome,
+                        ftMade: actualFtMade,
+                        gameDate: selectedGame.date,
+                        period: currentPeriod,
+                        isPractice: selectedGame.date === 'practice'
+                    });
+
+                    updateRecentPlays(selectedPlay.id, outcome);
                     await loadPlayData();
+
+                    setShowUndo(true);
+                    setTimeout(() => setShowUndo(false), 5000);
                     
-                    alert('Play logged successfully!');
-                    
-                    // Reset logging form
-                    setLogPlayGroup('');
-                    setLogVariation('');
+                    setSelectedPlay(null);
+                    setGlobalSearch('');
                     
                 } catch (error) {
                     console.error('Error logging play:', error);
@@ -221,15 +912,275 @@
                     setLogging(false);
                 }
             };
-            // Load years from Firebase
-            // Implement at the end when we have more years
 
+            // Handle Free throws
+            const handleFreeThrowSubmit = (ftMade) => {
+                setShowFreeThrowModal(false);
+                logPlayOutcome(freeThrowData.outcome, ftMade);
+            };
+
+            // Undo last logged play
+            const undoLastPlay = async () => {
+                if (!lastLoggedPlay) return;
+
+                try {
+                    setLogging(true);
+
+                    // Restore stats if it was a playcall
+                    if (lastLoggedPlay.statsPath && lastLoggedPlay.previousData) {
+                        const statsRef = database.ref(lastLoggedPlay.statsPath);
+                        await statsRef.set(lastLoggedPlay.previousData);
+                    }
+
+                    // Remove from games if not practice
+                    if (!lastLoggedPlay.isPractice && lastLoggedPlay.gameDate) {
+                        const lastPossessionKey = `Possession${(possessionCount - 1).toString().padStart(3, '0')}`;
+                        const possessionsRef = database.ref(
+                            `playcalls/${selectedYear}/games/${lastLoggedPlay.gameDate}/possessions/${lastPossessionKey}`
+                        );
+                        await possessionsRef.remove();
+                        
+                        setPossessionCount(prev => Math.max(0, prev - 1));
+                    }
+
+                    await loadPlayData();
+                    setLastLoggedPlay(null);
+                    setShowUndo(false);
+
+                    alert('Last play entry undone!');
+                } catch (error) {
+                    console.error('Error undoing play:', error);
+                    alert('Error undoing: ' + error.message);
+                } finally {
+                    setLogging(false);
+                }
+            };
+
+            // Free Throw Modal Component
+            const FreeThrowModal = ({ isOpen, onClose, onSubmit, outcomeType, maxAttempts}) => {
+                const [ftMade, setFtMade] = useState(0);
+                const maxFTs = maxAttempts || 2;
+
+                if (!isOpen) return null;
+
+                const handleSubmit = () => {
+                    onSubmit(ftMade);
+                    setFtMade(0);
+                };
+
+                const outcomeLabels = {
+                    '+2F': '2PT Made + Foul',
+                    '-2F': '2PT Missed + Foul',
+                    '+3F': '3PT Made + Foul',
+                    '-3F': '3PT Missed + Foul',
+                    'Foul_Floor': 'Foul Only',
+                    'Foul_Bonus': 'Foul On Floor - Bonus'
+                };
+
+                return(
+                    <div className="modal-overlay" onClick={onClose}>
+                        <div className="modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <div className="modal-title">Free Throws</div>
+                                <button className="modal-close" onClick={onClose}>✕</button>
+                            </div>
+
+                            <div className="modal-content">
+                                <div className={`p-4 rounded-lg mb-4 text-center ${
+                                    darkMode ? 'bg-blue-900/20 border-2 border-blue-700' : 'bg-blue-50 border-2 border-blue-200'
+                                }`}>
+                                    <div className={`text-lg font-bold ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                                        {outcomeLabels[outcomeType]}
+                                    </div>
+                                </div>
+
+                                <div className="text-center mb-6">
+                                    <div className={`text-sm font-semibold mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                        Free Throws Made
+                                    </div>
+                                    <div className="flex justify-center gap-4 mb-4">
+                                        <button
+                                            onClick={() => setFtMade(Math.max(0, ftMade - 1))}
+                                            className={`w-16 h-16 rounded-lg font-bold text-2xl transition-all ${
+                                                darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                                            }`}
+                                        >
+                                            −
+                                        </button>
+                                        <div className={`w-24 h-16 rounded-lg flex items-center justify-center text-4xl font-bold ${
+                                            darkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'
+                                        }`}>
+                                            {ftMade}
+                                        </div>
+                                        <button
+                                            onClick={() => setFtMade(Math.min(maxFTs, ftMade + 1))}
+                                            className={`w-16 h-16 rounded-lg font-bold text-2xl transition-all ${
+                                                darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                                            }`}
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                    <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        out of {maxFTs} attempts
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="modal-actions">
+                                <button className="btn-primary" onClick={handleSubmit}>
+                                    Submit ({ftMade}/{maxFTs} FT)
+                                </button>
+                                <button className="btn-secondary" onClick={onClose}>
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Add Play Modal Component
+            const AddPlayModal = ({ isOpen, onClose }) => {
+                const [activeTab, setActiveTab] = useState('series');
+                const [formData, setFormData] = useState({
+                    seriesName: '',
+                    playName: ''
+                });
+
+                if (!isOpen) return null;
+
+                const handleSubmit = async () => {
+                    try {
+                        if (activeTab === 'series' && formData.seriesName && formData.playName) {
+                            const path = `playcalls/${selectedYear}/stats/series/${formData.seriesName}/${formData.playName}`;
+                            await database.ref(path).set({
+                                '-3': 0, '-2': 0, '+2': 0, '+2F': 0, '+3': 0, '+3F': 0,
+                                '-2F': 0, '-3F': 0, 'AvgPointsNoFTs': 0, 'FOF': 0,
+                                'MadeFG': 0, 'MissTO': 0, 'NOTHING': 0, 'NumCalls': 0, 'TO': 0,
+                                'Foul_Floor': 0, 'Foul_Bonus': 0
+                            });
+                            alert(`Created: ${formData.seriesName} - ${formData.playName}`);
+                        } else if (activeTab === 'play' && formData.seriesName && formData.playName) {
+                            const path = `playcalls/${selectedYear}/stats/series/${formData.seriesName}/${formData.playName}`;
+                            await database.ref(path).set({
+                                '-3': 0, '-2': 0, '+2': 0, '+2F': 0, '+3': 0, '+3F': 0,
+                                '-2F': 0, '-3F': 0, 'AvgPointsNoFTs': 0, 'FOF': 0,
+                                'MadeFG': 0, 'MissTO': 0, 'NOTHING': 0, 'NumCalls': 0, 'TO': 0,
+                                'Foul_Floor': 0, 'Foul_Bonus': 0
+                            });
+                            alert(`Added play: ${formData.playName} to ${formData.seriesName}`);
+                        } else {
+                            alert('Please fill in all fields');
+                            return;
+                        }
+
+                        await loadPlayData();
+                        setFormData({ seriesName: '', playName: '' });
+                        onClose();
+                    } catch (error) {
+                        console.error('Error creating play:', error);
+                        alert('Error creating play. Check console.');
+                    }
+                };
+
+                const existingSeries = playData ? Object.keys(playData).sort() : [];
+
+                return (
+                    <div className="modal-overlay" onClick={onClose}>
+                        <div className="modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <div className="modal-title">➕ Add New Play</div>
+                                <button className="modal-close" onClick={onClose}>✕</button>
+                            </div>
+
+                            <div className="modal-tabs">
+                                <button
+                                    className={`modal-tab ${activeTab === 'series' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('series')}
+                                >
+                                    New Series
+                                </button>
+                                <button
+                                    className={`modal-tab ${activeTab === 'play' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('play')}
+                                >
+                                    Add to Existing
+                                </button>
+                            </div>
+
+                            <div className="modal-content">
+                                {activeTab === 'series' && (
+                                    <>
+                                        <div className="form-group">
+                                            <label>Series Name</label>
+                                            <input
+                                                type="text"
+                                                value={formData.seriesName}
+                                                onChange={(e) => setFormData({...formData, seriesName: e.target.value})}
+                                                placeholder="e.g., Horns, Motion, UCLA"
+                                            />
+                                            <div className="helper-text">Create a new play series/category</div>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Play</label>
+                                            <input
+                                                type="text"
+                                                value={formData.playName}
+                                                onChange={(e) => setFormData({...formData, playName: e.target.value})}
+                                                placeholder="e.g., 1, 2, 3"
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                {activeTab === 'play' && (
+                                    <>
+                                        <div className="form-group">
+                                            <label>Select Existing Series</label>
+                                            <select
+                                                value={formData.seriesName}
+                                                onChange={(e) => setFormData({...formData, seriesName: e.target.value})}
+                                            >
+                                                <option value="">Choose series...</option>
+                                                {existingSeries.map(series => (
+                                                    <option key={series} value={series}>{series}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>New Play</label>
+                                            <input
+                                                type="text"
+                                                value={formData.playName}
+                                                onChange={(e) => setFormData({...formData, playName: e.target.value})}
+                                                placeholder="e.g., 1, 2, 3"
+                                            />
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="modal-actions">
+                                <button className="btn-primary" onClick={handleSubmit}>
+                                    Add Play
+                                </button>
+                                <button className="btn-secondary" onClick={onClose}>
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Load years from Firebase
             // Load play data from Firebase
             const loadPlayData = useCallback(async () => {
                 try {
                     setLoading(true);
                     
-                    const dbRef = database.ref(`playcalls/${selectedYear}`);
+                    const dbRef = database.ref(`playcalls/${selectedYear}/stats/series`);
                     const snapshot = await dbRef.once('value');
                     
                     if (!snapshot.exists()) {
@@ -241,13 +1192,39 @@
 
                     const data = snapshot.val();
                     setPlayData(data);
+
+                    if (selectedGame && selectedGame.date !== 'practice') {
+                        const possessionsRef = database.ref(`playcalls/${selectedYear}/games/${selectedGame.date}/possessions`);
+                        const possessionsSnapshot = await possessionsRef.once('value');
+                        if (possessionsSnapshot.exists()) {
+                            const possessions = possessionsSnapshot.val();
+                            const possessionCount = Object.keys(possessions).length;
+                            setPossessionCount(possessionCount + 1); // Set to next possession
+                            console.log(`Loaded ${possessionCount} possessions from Firebase`);
+                        } else {
+                            setPossessionCount(1); // Start at 1 if no possessions yet
+                        }
+                    }
+
                     setLastUpdated(new Date().toLocaleString());
-            } catch (error) {
-                console.error('Error fetching play data:', error);
-            } finally {
-                setLoading(false);
-            }
-        }, [selectedYear]);
+                } catch (error) {
+                    console.error('Error fetching play data:', error);
+                } finally {
+                    setLoading(false);
+                }
+            }, [selectedYear, selectedGame]);
+
+            const handleRefresh = async () => {
+                setLoading(true);
+                try {
+                    await loadPlayData();
+                } catch (error) {
+                    console.error('Error refreshing:', error);
+                    alert('Error refreshing data');
+                } finally {
+                    setLoading(false);
+                }
+            };
 
         // Load data on mount
         useEffect(() => {
@@ -256,620 +1233,112 @@
             }
         }, [selectedYear, loadPlayData]);
 
-        // Update available play groups when play type changes
-        useEffect(() => {
-            if (playData && selectedPlayType && playData[selectedPlayType]) {
-                const groups = Object.keys(playData[selectedPlayType]).sort();
-                setAvailableGroups(groups);
-                setSelectedPlayGroup('');
-                setSelectedVariation('');
-                setAvailableVariations([]);
-                setSelectedPlayStats(null);
-            } else {
-                setAvailableGroups([]);
-                setSelectedPlayGroup('');
-            }
-        }, [selectedPlayType, playData]);
-
-        // Update available variations when play group changes
-        useEffect(() => {
-            if (selectedPlayType && selectedPlayGroup && playData) {
-                const groupData = playData[selectedPlayType]?.[selectedPlayGroup];
-                if (groupData) {
-                    const variations = Object.keys(groupData).filter(key =>
-                        key.length === 1 && key.match(/[A-Z]/i)
-                    ).sort();
-                    setAvailableVariations(variations);
-                    setSelectedVariation('');
-                    setSelectedPlayStats(null);
-                } else {
-                    setAvailableVariations([]);
-                    setSelectedVariation('');
-                }
-            }
-        }, [selectedPlayGroup, selectedPlayType, playData]);
-
-        // Load stats for the selected play
-        useEffect(() => {
-            if (selectedPlayType && selectedPlayGroup && selectedVariation && playData) {
-                const stats = playData[selectedPlayType]?.[selectedPlayGroup]?.[selectedVariation];
-                setSelectedPlayStats(stats || null);
-            } 
-        }, [selectedVariation, selectedPlayGroup, selectedPlayType, playData]);
-
-        // Update success rate chart
-        useEffect(() => {
-            if (!selectedPlayStats || !successRateChartRef.current) return;
-            
-            const ctx = successRateChartRef.current.getContext('2d');
-
-            if (successRateChartInstance.current) {
-                successRateChartInstance.current.destroy();
-            }
-
-            // Getting raw counts for before calculating percentages
-            const totalCalls = parseInt(selectedPlayStats.NumCalls) || 1;
-            const madeFGCount = (parseInt(selectedPlayStats['+2']) || 0) +
-                               (parseInt(selectedPlayStats['+3']) || 0) +
-                               (parseInt(selectedPlayStats['+2F']) || 0) +
-                               (parseInt(selectedPlayStats['+3F']) || 0);
-            const missTOCount = (parseInt(selectedPlayStats['-2']) || 0) +
-                                (parseInt(selectedPlayStats['-3']) || 0) +
-                                (parseInt(selectedPlayStats['-2F']) || 0) +
-                                (parseInt(selectedPlayStats['-3F']) || 0);
-            const nothingCount = parseInt(selectedPlayStats.NOTHING) || 0;
-            const TOCount = parseInt(selectedPlayStats.TO) || 0;
-
-            // Calculate percentages
-            const madeFG = (madeFGCount / totalCalls) * 100;
-            const missTO = (missTOCount / totalCalls) * 100;
-            const nothing = (nothingCount / totalCalls) * 100;
-            const TO = (TOCount / totalCalls) * 100;
-
-            successRateChartInstance.current = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Made FG', 'Miss/TO', 'Nothing', 'Turnover'],
-                    datasets: [{
-                        data: [madeFG, missTO, nothing, TO],
-                        backgroundColor: [
-                            '#10B981', // Green for made
-                            '#EF4444', // Red for miss/TO
-                            '#6B7280', // Gray for nothing
-                            '#F59E0B', // Amber for turnover
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: darkMode ? '#fff' : '#374151',
-                                padding: 15
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.label + ': ' + context.parsed.toFixed(1) + '%';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }, [selectedPlayStats, darkMode]);
-
-        // Update point distribution chart
-        useEffect(() => {
-            if (!selectedPlayStats || !pointDistributionChartRef.current) return;
-
-                const ctx = pointDistributionChartRef.current.getContext('2d');
-                
-                if (pointDistributionChartInstance.current) {
-                    pointDistributionChartInstance.current.destroy();
-                }
-
-                const points = [
-                    { label: '3pt', value: parseInt(selectedPlayStats['+3'] || 0) },
-                    { label: '2pt', value: parseInt(selectedPlayStats['+2'] || 0) },
-                    { label: 'No Score', value: parseInt(selectedPlayStats['-2'] || 0) + parseInt(selectedPlayStats['-3'] || 0) },
-                    { label: '3pt + Foul', value: parseInt(selectedPlayStats['+3F'] || 0) },
-                    { label: '2pt + Foul', value: parseInt(selectedPlayStats['+2F'] || 0) },
-                    { label: 'Miss + Foul', value: parseInt(selectedPlayStats['-2F'] || 0) + parseInt(selectedPlayStats['-3F'] || 0) }
-                ];
-
-                pointDistributionChartInstance.current = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: points.map(p => p.label),
-                        datasets: [{
-                            label: 'Occurrences',
-                            data: points.map(p => p.value),
-                            backgroundColor: '#3B82F6'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    color: darkMode ? '#9CA3AF' : '#6B7280',
-                                    stepSize: 1
-                                },
-                                grid: {
-                                    color: darkMode ? '#374151' : '#E5E7EB'
-                                }
-                            },
-                            x: {
-                                ticks: {
-                                    color: darkMode ? '#9CA3AF' : '#6B7280'
-                                },
-                                grid: {
-                                    color: darkMode ? '#374151' : '#E5E7EB'
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        }
-                    }
-                });
-        }, [selectedPlayStats, darkMode]);
-
-        // Update point distribution chart
-        useEffect(() => {
-            if(!selectedPlayStats || !pointDistributionChartRef.current) return;
-
-                const ctx = pointDistributionChartRef.current.getContext('2d');
-                
-                if (pointDistributionChartInstance.current) {
-                    pointDistributionChartInstance.current.destroy();
-                }
-
-                const points = [
-                    { label: '3pt', value: parseInt(selectedPlayStats['+3'] || 0) },
-                    { label: '2pt', value: parseInt(selectedPlayStats['+2'] || 0) },
-                    { label: 'No Score', value: parseInt(selectedPlayStats['-2'] || 0) + parseInt(selectedPlayStats['-3'] || 0) },
-                    { label: '3pt + Foul', value: parseInt(selectedPlayStats['+3F'] || 0) },
-                    { label: '2pt + Foul', value: parseInt(selectedPlayStats['+2F'] || 0) },
-                    { label: 'Miss + Foul', value: parseInt(selectedPlayStats['-2F'] || 0) + parseInt(selectedPlayStats['-3F'] || 0) }
-                ];
-
-                pointDistributionChartInstance.current = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: points.map(p => p.label),
-                        datasets: [{
-                            label: 'Occurrences',
-                            data: points.map(p => p.value),
-                            backgroundColor: '#3B82F6'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    color: darkMode ? '#9CA3AF' : '#6B7280',
-                                    stepSize: 1
-                                },
-                                grid: {
-                                    color: darkMode ? '#374151' : '#E5E7EB'
-                                }
-                            },
-                            x: {
-                                ticks: {
-                                    color: darkMode ? '#9CA3AF' : '#6B7280'
-                                },
-                                grid: {
-                                    color: darkMode ? '#374151' : '#E5E7EB'
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        }
-                    }
-                });      
-        }, [selectedPlayStats, darkMode]);
-
-        const PlayStatsCard = ({ stats }) => {
-            if (!stats) return null;
-            
-            // Need to fix avgPoints
-            const totalPoints = (parseInt(stats['+2']) || 0) * 2 +
-                                (parseInt(stats['+3']) || 0) * 3 +
-                                (parseInt(stats['+2F']) || 0) * 2 +
-                                (parseInt(stats['+3F']) || 0) * 3;
-            const numCalls = parseInt(stats.numCalls || stats.NumCalls) || 1;
-            const avgPoints = numCalls > 0 ? totalPoints / numCalls : 0;
-            
-            // Calculate FG% from raw counts
-            const madeFGCount = (parseInt(stats['+2']) || 0) +
-                               (parseInt(stats['+3']) || 0) +
-                               (parseInt(stats['+2F']) || 0) +
-                               (parseInt(stats['+3F']) || 0);
-            const fgPct = (madeFGCount / numCalls) * 100;
+        // Selected Play Interface
+        const SelectedPlayInterface = () => {
+            if (!selectedPlay) return null;
 
             return (
-                    <div className={`rounded-lg shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} p-6`}>
-                        <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                            {`Play ${selectedPlayType}-${selectedPlayGroup}${selectedVariation}`}
-                        </h3>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                            <div>
-                                <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Avg Points</div>
-                                <div className={`text-2xl font-bold ${avgPoints > 1 ? 'text-green-500' : avgPoints < 0.5 ? 'text-red-500' : 'text-blue-500'}`}>
-                                    {avgPoints.toFixed(2)}
-                                </div>
-                            </div>
-                            <div>
-                                <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Times Called</div>
-                                <div className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{numCalls}</div>
-                            </div>
-                            <div>
-                                <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>FG %</div>
-                                <div className={`text-2xl font-bold ${fgPct > 40 ? 'text-green-500' : fgPct < 30 ? 'text-red-500' : 'text-blue-500'}`}>
-                                    {fgPct.toFixed(1)}%
-                                </div>
-                            </div>
-                            <div>
-                                <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Fouls on FGs</div>
-                                <div className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{stats.FOF || 0}</div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h4 className={`text-md font-semibold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                                    Outcome Distribution
-                                </h4>
-                                <div style={{ height: '250px' }}>
-                                    <canvas ref={successRateChartRef}></canvas>
-                                </div>
-                            </div>
-                            <div>
-                                <h4 className={`text-md font-semibold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                                    Scoring Breakdown
-                                </h4>
-                                <div style={{ height: '250px' }}>
-                                    <canvas ref={pointDistributionChartRef}></canvas>
-                                </div>
-                            </div>
+                <div className={`rounded-lg shadow-lg ${darkMode ? 'bg-gray-800 border-2 border-blue-500' : 'bg-white border-2 border-blue-400'} p-5 mb-4`}>
+                    <div className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                        {selectedPlay.fullName}
+                    </div>
+                    <div>
+                        <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                            <button onClick={() => logPlayOutcome('+3F')} disabled={logging}
+                                className={`px-3 py-4 text-lg rounded-lg font-bold text-white transition-colors ${logging ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'} bg-green-600`}>
+                                3PT+Foul<br/>✓
+                            </button>
+                            <button onClick={() => logPlayOutcome('+3')} disabled={logging}
+                                className={`px-3 py-4 text-lg rounded-lg font-bold text-white transition-colors ${logging ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'} bg-green-500`}>
+                                3PT Made<br/>✓
+                            </button>
+                            <button onClick={() => logPlayOutcome('-3F')} disabled={logging}
+                                className={`px-3 py-4 text-lg rounded-lg font-bold text-white transition-colors ${logging ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'} bg-red-500`}>
+                                3PT Miss<br/>+Foul
+                            </button>
+                            <button onClick={() => logPlayOutcome('-3')} disabled={logging}
+                                className={`px-3 py-4 text-lg rounded-lg font-bold text-white transition-colors ${logging ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'} bg-red-600`}>
+                                3PT Miss<br/>✗
+                            </button>
+                            <button onClick={() => logPlayOutcome('+2F')} disabled={logging}
+                                className={`px-3 py-4 text-lg rounded-lg font-bold text-white transition-colors ${logging ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'} bg-green-600`}>
+                                2PT+Foul<br/>✓
+                            </button>
+                            <button onClick={() => logPlayOutcome('+2')} disabled={logging}
+                                className={`px-3 py-4 text-lg rounded-lg font-bold text-white transition-colors ${logging ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'} bg-green-500`}>
+                                2PT Made<br/>✓
+                            </button>
+                            <button onClick={() => logPlayOutcome('-2F')} disabled={logging}
+                                className={`px-3 py-4 text-lg rounded-lg font-bold text-white transition-colors ${logging ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'} bg-red-500`}>
+                                2PT Miss<br/>+Foul
+                            </button>
+                            <button onClick={() => logPlayOutcome('-2')} disabled={logging}
+                                className={`px-3 py-4 text-lg rounded-lg font-bold text-white transition-colors ${logging ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'} bg-red-600`}>
+                                2PT Miss<br/>✗
+                            </button>
+                            <button onClick={() => logPlayOutcome('Foul_Bonus')} disabled = {logging}
+                                className={`px-3 py-4 text-lg rounded-lg font-bold text-white transtion-colors ${logging ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'} bg-blue-600`}>
+                                Foul Bonus
+                            </button>
+                            <button onClick={() => logPlayOutcome('Foul_Floor')} disabled = {logging}
+                                className={`px-3 py-4 text-lg rounded-lg font-bold text-white transition-colors ${logging ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'} bg-blue-600`}>
+                                Foul on Floor
+                            </button>
+                            <button onClick={() => logPlayOutcome('NOTHING')} disabled={logging}
+                                className={`px-3 py-4 text-lg rounded-lg font-bold text-white transition-colors ${logging ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'} ${darkMode ? 'bg-gray-600' : 'bg-gray-400'}`}>
+                                Nothing
+                            </button>
+                            <button onClick={() => logPlayOutcome('TO')} disabled={logging}
+                                className={`px-3 py-4 text-lg rounded-lg font-bold text-white transition-colors ${logging ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'} bg-yellow-600`}>
+                                Turnover
+                            </button>
                         </div>
                     </div>
-                );
+                </div>
+            );
+        };
+
+        // Undo Banner
+        const UndoBanner = () => {
+            if (!showUndo || !lastLoggedPlay) return null;
+
+            const outcomeLabels = {
+                '+3': '3PT MADE',
+                '+2': '2PT MADE',
+                '+3F': '3PT+FOUL',
+                '+2F': '2PT+FOUL',
+                '-3': '3PT MISS',
+                '-2': '2PT MISS',
+                '-3F': '3PT MISS+FOUL',
+                '-2F': '2PT MISS+FOUL',
+                'TO': 'TURNOVER',
+                'NOTHING': 'NOTHING'
             };
-
-        const PlayTypeOverview = () => {
-            if (!playData) return null;
-
-            const playTypeSummary = {};
-
-            // Calculate summary for each play type
-            Object.entries(playData).forEach(([type, groups]) => {
-                let totalCalls = 0;
-                let totalPoints = 0;
-                let totalMadeFG = 0;
-                let playCount = 0;
-                
-                Object.values(groups).forEach(group => {
-                    Object.values(group).forEach(variation => {
-                        const calls = parseInt(variation.numCalls || variation.NumCalls) || 0;
-                        if (calls > 0) {
-                            totalCalls += calls;
-                            
-                            // Calculate total points from raw counts
-                            const totalPointCount = (parseInt(variation['+2']) || 0) * 2 +
-                                                (parseInt(variation['+3']) || 0) * 3 +
-                                                (parseInt(variation['+2F']) || 0) * 2 +
-                                                (parseInt(variation['+3F']) || 0) * 3;
-
-                            totalPoints += totalPointCount;
-
-                            // Calculate made FG from raw counts
-                            const madeFGCount = (parseInt(variation['+2']) || 0) +
-                                               (parseInt(variation['+3']) || 0) +
-                                               (parseInt(variation['+2F']) || 0) +
-                                               (parseInt(variation['+3F']) || 0);
-                            totalMadeFG += madeFGCount;
-                            playCount++;
-                        }
-                    });
-                });
-
-                if (totalCalls > 0) {
-                    playTypeSummary[type] = {
-                        name: playTypeNames[type] || `Type ${type}`,
-                        totalCalls,
-                        avgPoints: totalPoints / totalCalls,
-                        fgPct: (totalMadeFG / totalCalls) * 100,
-                        playCount
-                    };
-                }
-            });
 
             return (
-                    <div className={`rounded-lg shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} mb-6`}>
-                        <div className="p-4 border-b">
-                            <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Play Type Overview</h2>
-                        </div>
-                        <div className="p-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {Object.entries(playTypeSummary).map(([type, summary]) => (
-                                    <div key={type} className="relative">
-                                        <div
-                                            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                                                selectedPlayType === type 
-                                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                                                    : expandedPlayType === type
-                                                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                                                    : darkMode ? 'border-gray-700 hover:border-gray-600' : 'border-gray-200 hover:border-gray-300'
-                                            }`}
-                                            onClick={() => {
-                                                setSelectedPlayType(type);
-                                                setExpandedPlayType(expandedPlayType === type ? '' : type);
-                                            }}
-                                        >
-                                            <div className="flex justify-between items-start mb-2">
-                                                <h3 className={`font-semibold ${
-                                                    (selectedPlayType == type || expandedPlayType == type) && !darkMode 
-                                                    ? 'text-gray-800' 
-                                                    : (selectedPlayType == type || expandedPlayType == type) && darkMode
-                                                    ? 'text-black'
-                                                    : darkMode
-                                                    ? 'text-gray-200'
-                                                    : 'text-gray-900'
-                                                }`}>{summary.name}</h3>
-                                                <span className={`text-xs px-2 py-1 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
-                                                    {summary.playCount} plays
-                                                </span>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <div className="flex justify-between">
-                                                    <span className={`text-sm ${
-                                                        (selectedPlayType === type || expandedPlayType === type) && !darkMode 
-                                                        ? 'text-gray-600'
-                                                        : (selectedPlayType === type || expandedPlayType === type) && darkMode
-                                                        ? 'text-gray-900'
-                                                        : darkMode
-                                                        ? 'text-gray-400' 
-                                                        : 'text-gray-600'
-                                                    }`}>Times Called:</span>
-                                                    <span className={`text-sm font-medium ${
-                                                        (selectedPlayType === type || expandedPlayType === type) && !darkMode
-                                                        ? 'text-gray-800'
-                                                        : (selectedPlayType === type || expandedPlayType === type) && darkMode
-                                                        ? 'text-black'
-                                                        : darkMode 
-                                                        ? 'text-gray-200' 
-                                                        : 'text-gray-800'
-                                                    }`}>{summary.totalCalls}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className={`text-sm ${
-                                                        (selectedPlayType === type || expandedPlayType === type) && !darkMode
-                                                        ? 'text-gray-600'
-                                                        : (selectedPlayType === type || expandedPlayType === type) && darkMode
-                                                        ? 'text-gray-900'
-                                                        : darkMode
-                                                        ? 'text-gray-400' 
-                                                        : 'text-gray-600'
-                                                    }`}>Avg Points:</span>
-                                                    <span className={`text-sm font-medium ${summary.avgPoints > 1 ? 'text-green-500' : 'text-blue-500'}`}>
-                                                        {summary.avgPoints.toFixed(2)}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className={`text-sm ${
-                                                        (selectedPlayType === type || expandedPlayType === type) && !darkMode
-                                                        ? 'text-gray-600'
-                                                        : (selectedPlayType === type || expandedPlayType === type) && darkMode
-                                                        ? 'text-gray-900'
-                                                        : darkMode
-                                                        ? 'text-gray-400' 
-                                                        : 'text-gray-600'
-                                                    }`}>FG%:</span>
-                                                    <span className={`text-sm font-medium ${summary.fgPct > 40 ? 'text-green-500' : 'text-blue-500'}`}>
-                                                        {summary.fgPct.toFixed(1)}%
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        {expandedPlayType === type && (
-                                            <div className={`mt-3 p-4 rounded-lg border-2 ${darkMode ? 'bg-gray-900 border-gray-600' : 'bg-gray-50 border-gray-300'}`}>
-                                                <h4 className={`text-sm font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                                    Log Play Call
-                                                </h4>
-                                                
-                                                <div className="space-y-3">
-                                                    <div>
-                                                        <label className={`block text-xs font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                            Play Group
-                                                        </label>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {logAvailableGroups.map(group => (
-                                                                <button
-                                                                    key={group}
-                                                                    onClick={() => setLogPlayGroup(group)}
-                                                                    className={`px-3 py-1 text-sm rounded font-medium transition-colors ${
-                                                                        logPlayGroup === group 
-                                                                            ? 'bg-blue-600 text-white'
-                                                                            : darkMode
-                                                                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                                    }`}
-                                                                    >
-                                                                    {group}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                    </div>
-                                                    
-                                                    {logPlayGroup && (
-                                                        <div>
-                                                            <label className={`block text-xs font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                                Variation
-                                                            </label>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {logAvailableVariations.map(variation => (
-                                                                    <button
-                                                                        key={variation}
-                                                                        onClick={() => setLogVariation(variation)}
-                                                                        className={`px-3 py-1 text-sm rounded font-medium transition-colors ${
-                                                                            logVariation === variation 
-                                                                                ? 'bg-blue-600 text-white'
-                                                                                : darkMode
-                                                                                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                                        }`}
-                                                                    >
-                                                                        {variation}
-                                                                    </button>
-                                                                ))}
-                                                            </div>                                                                        
-                                                        </div>
-                                                    )}
-                                                    
-                                                    {logVariation && (
-                                                        <div>
-                                                            <label className={`block text-xs font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                                Select Outcome
-                                                            </label>
-                                                            <div className="grid grid-cols-2 gap-2">
-                                                                <button
-                                                                    onClick={() => logPlayOutcome('+3')}
-                                                                    disabled={logging}
-                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
-                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
-                                                                    } bg-green-600 text-white hover:bg-green-700`}
-                                                                >
-                                                                    3pt Made
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => logPlayOutcome('+2')}
-                                                                    disabled={logging}
-                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
-                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
-                                                                    } bg-green-500 text-white hover:bg-green-600`}
-                                                                >
-                                                                    2pt Made
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => logPlayOutcome('-3')}
-                                                                    disabled={logging}
-                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
-                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
-                                                                    } bg-red-600 text-white hover:bg-red-700`}
-                                                                >
-                                                                    3pt Miss
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => logPlayOutcome('-2')}
-                                                                    disabled={logging}
-                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
-                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
-                                                                    } bg-red-500 text-white hover:bg-red-600`}
-                                                                >
-                                                                    2pt Miss
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => logPlayOutcome('+3F')}
-                                                                    disabled={logging}
-                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
-                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
-                                                                    } bg-green-600 text-white hover:bg-green-700`}
-                                                                >
-                                                                    3pt + Foul
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => logPlayOutcome('+2F')}
-                                                                    disabled={logging}
-                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
-                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
-                                                                    } bg-green-500 text-white hover:bg-green-600`}
-                                                                >
-                                                                    2pt + Foul
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => logPlayOutcome('-3F')}
-                                                                    disabled={logging}
-                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
-                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
-                                                                    } bg-red-600 text-white hover:bg-red-700`}
-                                                                >
-                                                                    3pt Miss + Foul
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => logPlayOutcome('-2F')}
-                                                                    disabled={logging}
-                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
-                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
-                                                                    } bg-red-500 text-white hover:bg-red-600`}
-                                                                >
-                                                                    2pt Miss + Foul
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => logPlayOutcome('TO')}
-                                                                    disabled={logging}
-                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
-                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
-                                                                    } bg-yellow-600 text-white hover:bg-yellow-700`}
-                                                                >
-                                                                    Turnover
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => logPlayOutcome('NOTHING')}
-                                                                    disabled={logging}
-                                                                    className={`px-3 py-2 text-sm rounded font-medium transition-colors ${
-                                                                        logging ? 'opacity-50 cursor-not-allowed' : ''
-                                                                    } ${darkMode ? 'bg-gray-600 text-white hover:bg-gray-700' : 'bg-gray-400 text-white hover:bg-gray-500'}`}
-                                                                >
-                                                                    Nothing
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
+                <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
+                    <div className="bg-green-600 text-white px-6 py-4 rounded-lg shadow-xl flex items-center gap-4">
+                        <div className="flex-1">
+                            <div className="font-bold">✅ SAVED</div>
+                            <div className="text-sm">
+                                {lastLoggedPlay.playInfo.displayName} → {outcomeLabels[lastLoggedPlay.outcome]}
                             </div>
                         </div>
+                        <button
+                            onClick={undoLastPlay}
+                            className="px-4 py-2 bg-white text-green-600 rounded-lg font-bold hover:bg-gray-100 transition-colors"
+                        >
+                            Undo
+                        </button>
                     </div>
-                );
-            };
+                </div>
+            );
+        };
 
-            if (loading) {
-                return (
-                    <div className="max-w-7xl mx-auto p-4">
-                        <div className="animate-pulse space-y-4">
-                            <div className="h-16 bg-gray-300 rounded"></div>
-                            <div className="h-64 bg-gray-300 rounded"></div>
-                            <div className="h-96 bg-gray-300 rounded"></div>
-                        </div>
-                    </div>
-                );
-            }
-
+        // Main Header Component
             return (
                 <div className="max-w-7xl mx-auto p-4">
-                    <div className={`rounded-lg shadow-md p-4 mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                    <div className={`rounded-lg shadow-md p-4 mb-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <img 
                                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Virginia_Tech_Hokies_logo.svg/2560px-Virginia_Tech_Hokies_logo.svg.png" 
@@ -879,6 +1348,7 @@
                             <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                                 Virginia Tech Basketball Play Calling Analytics
                             </h1>
+                            
                             <div className="flex flex-wrap items-center gap-3">
                                 <select
                                     value={selectedYear}
@@ -893,23 +1363,83 @@
                                     }
                                 </select>
                                 
-                                <input
-                                    type="date"
-                                    value={selectedDate}
-                                    onChange={(e) => setSelectedDate(e.target.value)}
+                                <select
+                                    value={selectedGame?.id || ''}
+                                    onChange={(e) => {
+                                        const game = gameSchedule.find(g => g.id === e.target.value);
+                                        setSelectedGame(game);
+                                        setManualPossessionAdjustment(0);
+
+                                        if (game) {
+                                            loadPlayData();
+                                        }
+                                    }}
                                     className={`px-3 py-2 border rounded-md ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                                />
+                                >
+                                    <option value="">-- Select Game --</option>
+                                    {gameSchedule.map(game => (
+                                        <option key={game.id} value={game.id}>
+                                            {game.displayName}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <button 
+                                    onClick={() => setShowAddPlayModal(true)}
+                                    className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
+                                        darkMode 
+                                            ? 'bg-[#642667] text-white hover:bg-[#5b1f5a]' 
+                                            : 'bg-[#642667] text-white hover:bg-[#5b1f5a]'
+                                    }`}
+                                >
+                                    + Add Play
+                                </button>
+
+                                {/* Possession Counter - Disabled for now */}
+                                {/*
+                                {selectedGame && selectedGame.date !== 'practice' && (
+                                    <div className = "possession-counter">
+                                        <span className="possession-label">Possession</span>
+                                        <span className="possession-value">
+                                            {possessionCount + manualPossessionAdjustment}
+                                        </span>
+                                        <div className="possession-controls">
+                                            <button
+                                                className="possession-btn"
+                                                onClick={() => setManualPossessionAdjustment(prev => prev + 1)}
+                                                title="Increase Possession Count"
+                                            >
+                                                +
+                                            </button>
+                                            <button
+                                                className="possession-btn2"
+                                                onClick={() => setManualPossessionAdjustment(prev => Math.max(-possessionCount, prev - 1))}
+                                                title="Decrease Possession Count"
+                                            >
+                                                −
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                                */} 
                                 
                                 <button
-                                    onClick={loadPlayData}
-                                    className={`px-4 py-2 rounded-md transition-colors ${darkMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-                                >
-                                    Refresh
+                                onClick={handleRefresh}
+                                disabled={loading}
+                                className={`px-4 py-2 rounded-md transition-colors ${
+                                    loading
+                                        ? 'bg-gray-400 cursor-not-allowed'
+                                        : darkMode 
+                                            ? 'bg-[#508590] text-white hover:bg-[#3e6b6f]' 
+                                            : 'bg-[#508590] text-white hover:bg-[#3e6b6f]'
+                                }`}
+                            >
+                                {loading ? '↻ Refreshing...' : '↻ Refresh'}
                                 </button>
                                 
                                 <button
                                     onClick={() => setDarkMode(prev => !prev)}
-                                    className={`px-3 py-2 rounded-md transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                                    className={`px-3 py-2 rounded-md transition-colors ${darkMode ? 'bg-[#E5E1E6] text-gray-800 hover:bg-[#D1CFCF]' : 'bg-[#E5E1E6] text-gray-800 hover:bg-[#D1CFCF]'}`}
                                 >
                                     {darkMode ? '☀️ Light' : '🌙 Dark'}
                                 </button>
@@ -922,80 +1452,175 @@
                         )}
                     </div>
 
-                    <PlayTypeOverview />
+                    <GameInfoHeader 
+                        selectedGame={selectedGame}
+                        darkMode={darkMode}
+                    />
 
-                    <div className={`rounded-lg shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} mb-6`}>
-                        <div className="p-4 border-b">
-                            <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Play Selection</h2>
+                    <UndoBanner />
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                        <div className={`rounded-lg shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} p-5`}>
+                            <div className="mb-2">
+                                <label className={`block text-sm font-bold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                    Quick Search
+                                </label>
+                                <input
+                                    type="text"
+                                    value={globalSearch}
+                                    onChange={(e) => setGlobalSearch(e.target.value)}
+                                    placeholder="Type to search plays..."
+                                    className={`w-full px-4 py-3 text-lg border-2 rounded-lg focus:outline-none ${
+                                        darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:bg-gray-700 focus:border-blue-500' 
+                                                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:bg-white focus:border-blue-500'
+                                    }`}
+                                />
+                            </div>
+
+                            {globalSearch && filterPlays(globalSearch).length > 0 && (
+                                <div className={`border-2 rounded-lg overflow-hidden mt-2 ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}>
+                                    {filterPlays(globalSearch).map(play => (
+                                        <button
+                                            key={play.id}
+                                            onClick={() => {
+                                                setSelectedPlay(play);
+                                                setGlobalSearch('');
+                                            }}
+                                            className={`w-full text-left px-4 py-2 border-b last:border-b-0 transition-colors ${
+                                                darkMode 
+                                                    ? 'border-gray-600 hover:bg-gray-700 text-white' 
+                                                    : 'border-gray-200 hover:bg-gray-50 text-gray-800'
+                                            }`}
+                                        >
+                                            <div className="font-semibold">{play.fullName}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                        <div className="p-4">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                        Play Type
-                                    </label>
-                                    <select
-                                        value={selectedPlayType}
-                                        onChange={(e) => setSelectedPlayType(e.target.value)}
-                                        className={`w-full px-3 py-2 border rounded-md ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                                    >
-                                        <option value="">Select Type</option>
-                                        {Object.keys(playTypeNames).map(type => (
-                                            <option key={type} value={type}>
-                                                {type} - {playTypeNames[type]}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                
-                                <div>
-                                    <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                        Play Group
-                                    </label>
-                                    <select
-                                        value={selectedPlayGroup}
-                                        onChange={(e) => setSelectedPlayGroup(e.target.value)}
-                                        disabled={!selectedPlayType}
-                                        className={`w-full px-3 py-2 border rounded-md ${
-                                            !selectedPlayType ? 'opacity-50 cursor-not-allowed' : ''
-                                        } ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                                    >
-                                        <option value="">
-                                            {availableGroups.length > 0 ? 'Select Group' : 'Select Type First'}
-                                        </option>
-                                        {availableGroups.map(group => (
-                                            <option key={group} value={group}>{group}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                
-                                <div>
-                                    <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                        Variation
-                                    </label>
-                                    <select
-                                        value={selectedVariation}
-                                        onChange={(e) => setSelectedVariation(e.target.value)}
-                                        disabled={!selectedPlayGroup}
-                                        className={`w-full px-3 py-2 border rounded-md ${
-                                            !selectedPlayGroup ? 'opacity-50 cursor-not-allowed' : ''
-                                        } ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                                    >
-                                        <option value="">
-                                            {availableVariations.length > 0 ? 'Select Variation' : 'Select Group First'}
-                                        </option>
-                                        {availableVariations.map(variation => (
-                                            <option key={variation} value={variation}>
-                                                Variation {variation}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+
+                        {/* New layout for quick log buttons*/}
+                    
+                        <div className={`rounded-lg shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} p-5`}>
+                            <h3 className={`text-sm font-bold mb-3 tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Quick Log
+                            </h3>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setSelectedPlay({
+                                        type: 'transition',
+                                        name: 'Transition',
+                                        fullName: 'Transition',
+                                        displayName: 'Transition',
+                                    })}
+                                    className={`px-10 py-4 rounded-lg font-bold text-white transition-all ${
+                                        selectedPlay?.type === 'transition' 
+                                            ? 'bg-[#630031] ring-4 ring-[#CF4420] transform scale-105 shadow-lg'
+                                            : 'bg-[#630031] hover:bg-[#7a0039] hover:scale-105'
+                                    }`}
+                                >
+                                Transition
+                                </button>
+                                <button
+                                    onClick={() => setSelectedPlay({
+                                        type: 'no_play',
+                                        name: 'No Play',
+                                        fullName: 'No Play',
+                                        displayName: 'No Play',
+                                    })}
+                                    className={`px-10 py-4 rounded-lg font-bold text-white text-lg transition-all ${
+                                        selectedPlay?.type === 'no_play' 
+                                            ? 'bg-gray-700 ring-4 ring-gray-400 transform scale-105 shadow-lg'
+                                            : 'bg-gray-600 hover:bg-gray-700 hover:scale-105'
+                                    }`}  
+                                >
+                                No Play
+                                </button>
+                                <button
+                                    onClick={() => setSelectedPlay({
+                                        type: 'whats_next',
+                                        name: "What's Next",
+                                        fullName: "What's Next",
+                                        displayName: "What's Next",
+                                    })}
+                                    className={`px-10 py-4 rounded-lg font-bold text-white transition-all ${
+                                        selectedPlay?.type === 'whats_next' 
+                                            ? 'bg-[#CF4420] ring-4 ring-[#630031] transform scale-105 shadow-lg'
+                                            : 'bg-[#CF4420] hover:bg-[#e05a35] hover:scale-105'
+                                    }`}
+                                >
+                                What's Next
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    {selectedPlayStats && <PlayStatsCard stats={selectedPlayStats} />}
+                    {recentPlays.length > 0 && (
+                        <div className={`rounded-lg shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} p-5`}>
+                            <h3 className={`text-sm font-bold mb-3 tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Recent Plays
+                            </h3>
+                            <div className="flex gap-3 overflow-y-auto pb-2">
+                                {recentPlays.map(play => {
+                                    const outcomeIcons = {
+                                        '+3': '✓3', '+2': '✓2', '-3': 'Missed 3', '-2': 'Missed 2',
+                                        '+3F': '✓3+F', '+2F': '✓2+F', '-3F': '+3FTs', '-2F': '+2FTs',
+                                        'TO': 'TO', 'NOTHING': '—', 'Foul_Floor': 'F', 'Foul_Bonus': 'F+2'
+                                    };
+
+                                    return(
+                                        <button
+                                            key={play.id}
+                                            onClick={() => setSelectedPlay(play)}
+                                            className={`px-4 py-2 rounded-lg transition-all text-left hover:scale-105 ${
+                                                darkMode 
+                                                    ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+                                                    : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                                            }`}
+                                        >
+                                            <div className="font-semibold text-md truncate">{play.displayName}</div>
+                                            <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} flex items-center gap-1`}>
+                                                <span>{play.count}x</span>
+                                                {play.lastOutcome && (
+                                                    <>
+                                                        <span>•</span>
+                                                        <span className={`font-semibold ${
+                                                            play.lastOutcome.startsWith('+') ? 'text-green-500' :
+                                                            play.lastOutcome.startsWith('-') ? 'text-red-500' :
+                                                            'text-yellow-500'
+                                                        }`}>
+                                                            {outcomeIcons[play.lastOutcome] || play.lastOutcome}
+                                                        </span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    <SelectedPlayInterface 
+                    selectedPlay={selectedPlay}
+                    darkMode={darkMode}
+                    logPlayOutcome={logPlayOutcome}
+                    logging={logging}
+                    />
+
+                    <FreeThrowModal 
+                        isOpen={showFreeThrowModal}
+                        onClose={() => setShowFreeThrowModal(false)}
+                        onSubmit={handleFreeThrowSubmit}
+                        outcomeType={freeThrowData.outcome}
+                        maxAttempts={freeThrowData.attempts}
+                    />
+
+                    <AddPlayModal
+                        isOpen={showAddPlayModal}
+                        onClose={() => setShowAddPlayModal(false)}
+                    />
+        
                 </div>
             );
         };

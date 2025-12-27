@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Game Schedule</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #630031;
+            margin-bottom: 10px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        input, select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background: #630031;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #8b0045;
+        }
+        button.secondary {
+            background: #666;
+        }
+        button.secondary:hover {
+            background: #888;
+        }
+        button.danger {
+            background: #dc3545;
+        }
+        button.danger:hover {
+            background: #c82333;
+        }
+        .game-list {
+            margin-top: 30px;
+        }
+        .game-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #630031;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .game-item.practice {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        .game-info {
+            flex: 1;
+        }
+        .game-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .status.success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏀 Manage Game Schedule</h1>
+        <p style="color: #666;">Add, edit, or remove games from your 2025 schedule</p>
+        
+        <!-- Add New Game Form -->
+        <div style="background: #e3f2fd; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin-top: 0;">➕ Add New Game</h3>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Date*</label>
+                    <input type="date" id="gameDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Opponent*</label>
+                    <input type="text" id="opponent" placeholder="e.g., Duke, UNC" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Home/Away*</label>
+                    <select id="location">
+                        <option value="Home">Home</option>
+                        <option value="Away">Away</option>
+                        <option value="Neutral">Neutral</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Time</label>
+                    <input type="text" id="time" placeholder="e.g., 7:00 PM">
+                </div>
+
+                <div class="form-group">
+                    <label>Conference:</label>
+                    <select id="conference">
+                        <option value="ACC">ACC</option>
+                        <option value="Non-Conference">Non-Conference</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button onclick="addGame()">➕ Add Game</button>
+            <button onclick="addPracticeMode()" class="secondary">🏋️ Add Practice Mode</button>
+        </div>
+        
+        <div id="status"></div>
+        
+        <!-- Current Schedule -->
+        <div class="game-list">
+            <h3>📅 Current Schedule</h3>
+            <button onclick="loadSchedule()">↻ Refresh Schedule</button>
+            <button onclick="uploadSchedule()" class="secondary">☁️ Upload to Firebase</button>
+            <button onclick="clearSchedule()" class="danger">🗑️ Clear All Games</button>
+            
+            <div id="scheduleList"></div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDmUDcy18ZWk_EgOSlLsk9CgzQaKVxcfG4",
+            authDomain: "vtmbb-playcalls.firebaseapp.com",
+            databaseURL: "https://vtmbb-playcalls-default-rtdb.firebaseio.com",
+            projectId: "vtmbb-playcalls",
+            storageBucket: "vtmbb-playcalls.firebasestorage.app",
+            messagingSenderId: "329877987847",
+            appId: "1:329877987847:web:d4d33227dc39624ae100a2"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let schedule = [];
+
+        function showStatus(message, type = 'success') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+            setTimeout(() => {
+                statusDiv.textContent = '';
+                statusDiv.className = 'status';
+            }, 5000);
+        }
+
+        function generateId() {
+            return 'game-' + Date.now();
+        }
+
+        function addGame() {
+            const date = document.getElementById('gameDate').value;
+            const opponent = document.getElementById('opponent').value;
+            const location = document.getElementById('location').value;
+            const time = document.getElementById('time').value;
+            const conference = document.getElementById('conference').value;
+
+            if (!date || !opponent) {
+                alert('Please fill in date and opponent');
+                return;
+            }
+
+            const game = {
+                id: generateId(),
+                date: date,
+                opponent: opponent,
+                location: location,
+                time: time,
+                conference: conference,
+                displayName: `${formatDate(date)} ${getVsAt(location)} ${opponent} (${location})${time ? ' - ' + time : ''}`
+            };
+
+            schedule.push(game);
+            schedule.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            displaySchedule();
+            clearForm();
+            showStatus('Game added! Click "Upload to Firebase" to save.', 'success');
+        }
+
+        function addPracticeMode() {
+            const practice = {
+                id: 'practice',
+                date: 'practice',
+                opponent: 'Practice',
+                location: 'Home',
+                time: '',
+                displayName: '🏋️ Practice (No Game)'
+            };
+
+            // Remove existing practice if any
+            schedule = schedule.filter(g => g.id !== 'practice');
+            
+            // Add practice at the end
+            schedule.push(practice);
+            
+            displaySchedule();
+            showStatus('Practice mode added! Click "Upload to Firebase" to save.', 'success');
+        }
+
+        function formatDate(dateStr) {
+            if (dateStr === 'practice') return 'Practice';
+            const date = new Date(dateStr + 'T00:00:00');
+            return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' });
+        }
+
+        function getVsAt(location) {
+            return location === 'Away' ? '@' : 'vs';
+        }
+
+        function deleteGame(id) {
+            if (confirm('Delete this game?')) {
+                schedule = schedule.filter(g => g.id !== id);
+                displaySchedule();
+                showStatus('Game deleted! Click "Upload to Firebase" to save.', 'success');
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('gameDate').value = '';
+            document.getElementById('opponent').value = '';
+            document.getElementById('location').value = 'Home';
+            document.getElementById('time').value = '';
+        }
+
+        function displaySchedule() {
+            const listDiv = document.getElementById('scheduleList');
+            
+            if (schedule.length === 0) {
+                listDiv.innerHTML = '<p style="color: #666;">No games scheduled yet. Add some above!</p>';
+                return;
+            }
+
+            listDiv.innerHTML = schedule.map(game => `
+                <div class="game-item ${game.date === 'practice' ? 'practice' : ''}">
+                    <div class="game-info">
+                        <strong>${game.displayName}</strong>
+                    </div>
+                    <div class="game-actions">
+                        <button onclick="deleteGame('${game.id}')" class="danger" style="padding: 8px 16px;">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadSchedule() {
+            try {
+                const scheduleRef = database.ref('playcalls/2025/schedule');
+                const snapshot = await scheduleRef.once('value');
+                const data = snapshot.val();
+
+                if (data) {
+                    schedule = Object.values(data);
+                    schedule.sort((a, b) => {
+                        if (a.date === 'practice') return 1;
+                        if (b.date === 'practice') return -1;
+                        return new Date(a.date) - new Date(b.date);
+                    });
+                    displaySchedule();
+                    showStatus('Schedule loaded from Firebase!', 'success');
+                } else {
+                    showStatus('No schedule found in Firebase. Start adding games!', 'error');
+                }
+            } catch (error) {
+                showStatus('Error loading schedule: ' + error.message, 'error');
+            }
+        }
+
+        async function uploadSchedule() {
+            if (schedule.length === 0) {
+                alert('No games to upload!');
+                return;
+            }
+
+            if (!confirm(`Upload ${schedule.length} game(s) to Firebase?`)) {
+                return;
+            }
+
+            try {
+                // Convert array to object with IDs as keys
+                const scheduleObject = {};
+                schedule.forEach(game => {
+                    scheduleObject[game.id] = game;
+                });
+
+                await database.ref('playcalls/2025/schedule').set(scheduleObject);
+                showStatus('Schedule uploaded to Firebase successfully!', 'success');
+            } catch (error) {
+                showStatus('Error uploading: ' + error.message, 'error');
+            }
+        }
+
+        async function clearSchedule() {
+            if (!confirm('Delete ALL games from Firebase? This cannot be undone!')) {
+                return;
+            }
+
+            try {
+                await database.ref('playcalls/2025/schedule').remove();
+                schedule = [];
+                displaySchedule();
+                showStatus('All games cleared from Firebase!', 'success');
+            } catch (error) {
+                showStatus('Error clearing: ' + error.message, 'error');
+            }
+        }
+
+        // Load schedule on page load
+        loadSchedule();
+    </script>
+</body>
+</html>

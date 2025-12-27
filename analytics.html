@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>VT Men's Basketball — Sideline Analytics</title>
+
+  <!-- React + Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Tailwind + Chart.js -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <style>
+    html,body{height:100%;margin:0}
+    .dark-mode{background:#111827 !important;color:#f9fafb}
+    .light-mode{background:#f9fafb !important;color:#111827}
+    .selectlike{appearance:none;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 18px) calc(50% - 3px),calc(100% - 12px) calc(50% - 3px);background-size:6px 6px,6px 6px;background-repeat:no-repeat}
+    .suggestion{cursor:pointer}
+    .tbl th{font-weight:700}
+    .tbl th,.tbl td{padding:.6rem .75rem;white-space:nowrap}
+    .pill{padding:.4rem .6rem;border-radius:.5rem}
+  </style>
+</head>
+<body class="dark-mode">
+  <div id="root"></div>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDmUDcy18ZWk_EgOSlLsk9CgzQaKVxcfG4",
+      authDomain: "vtmbb-playcalls.firebaseapp.com",
+      databaseURL: "https://vtmbb-playcalls-default-rtdb.firebaseio.com",
+      projectId: "vtmbb-playcalls",
+      storageBucket: "vtmbb-playcalls.firebasestorage.app",
+      messagingSenderId: "329877987847",
+      appId: "1:329877987847:web:d4d33227dc39624ae100a2",
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+  </script>
+
+  <script type="text/babel">
+    const {useState,useEffect,useMemo,useRef,useCallback} = React;
+
+    // Outcomes for heatmap display
+    const OUTCOME_KEYS = [
+      '+3', '+2', '-2', '-3',
+      '+3F', '+2F', '-2F', '-3F',
+      'NOTHING', 'TO', 'FOF'
+    ];
+
+    const VT_PURPLE = '#642667'; // Pylon Purple
+    const VT_PINK   = '#CE0058'; // Boundless Pink
+
+    function App(){
+      // THEME
+      const [dark,setDark]=useState(true);
+      useEffect(()=>{document.body.className=dark?'dark-mode':'light-mode';},[dark]);
+
+      // DATA SCOPE
+      const [season,setSeason]=useState('2025');
+      const [playData,setPlayData]=useState(null);
+      const [loading,setLoading]=useState(true);
+      const [updated,setUpdated]=useState(null);
+
+      // FILTER STATES
+      const [filterMode, setFilterMode]=useState('All Data'); 
+      const [gamesList, setGamesList]=useState([]);
+      const [schedule, setSchedule]=useState([]);
+      const [useFilter, setUseFilter]=useState(false);
+
+      // SEARCH + SELECTION
+      const [seriesQuery,setSeriesQuery]=useState('');                     // CHANGE: series-only search text
+      const [selectedSeries,setSelectedSeries]=useState(null);             // CHANGE: selected series name (e.g., "Alpha")
+      const [selectedPlay,setSelectedPlay]=useState(null);                 // CHANGE: selected play object {series, playNumber}
+
+      // POST-GAME MODE (kept)
+      const [postGameMode, setPostGameMode] = useState(false);
+
+      // CHART REFS
+      const outcomeRef=useRef(null), outcomeInst=useRef(null);     // 100% stacked outcome
+      const pppRef=useRef(null), pppInst=useRef(null);           // PPP Graph
+      const fgRef=useRef(null), fgInst=useRef(null);           // FG% Graph
+      const breakdownRef=useRef(null), breakdownInst=useRef(null); // Scoring breakdown (%)
+      const scatterRef = useRef(null), scatterInst = useRef(null); // Usage vs Success (post-game)
+      const seriesInputRef = useRef(null);
+
+
+      // RADAR (kept)
+      const radarRef = useRef(null);
+      const radarInst = useRef(null);
+      const [radarSelection, setRadarSelection] = useState([]);
+      useEffect(() => {
+        if (radarInst.current) {
+          radarInst.current.destroy();
+          radarInst.current = null;
+        }
+      }, [season, selectedSeries]);
+
+      // LOAD SCHEDULE
+      useEffect(() => {
+        const loadSchedule = async () => {
+          const snap = await database.ref(`playcalls/${season}/schedule`).once('value');
+          if (snap.exists()) {
+            const scheduleData = Object.values(snap.val()).filter(g => g.date !== 'practice');
+            setSchedule(scheduleData);
+            }
+        };
+        loadSchedule();
+      }, [season]);
+
+      // LOAD GAMES DATES
+      useEffect(() => {
+        const loadGames = async () => {
+          const snap = await database.ref(`playcalls/${season}/games`).once('value');
+          if (!snap.exists()) {
+            setGamesList([]);
+            return;
+          }
+          const games = snap.val();
+          const dates = Object.keys(games).sort().reverse(); // most recent first
+          setGamesList(dates);
+        };
+        loadGames();
+      }, [season]);
+
+      // Clear selected play if it doesn't exist in filtered data
+      useEffect(() => {
+        if (!playData) return;
+
+        if (selectedSeries && !playData[selectedSeries]) {
+          setSelectedSeries(null);
+          setSelectedPlay(null);
+          setRadarSelection([]);
+          return;
+        }
+        if (selectedPlay && selectedSeries) {
+        
+          // Check if selected play exists in current filtered data
+          const playExists = playData[selectedPlay.series] && 
+                            playData[selectedPlay.series][selectedPlay.playNumber];
+          
+          if (!playExists) {
+            setSelectedPlay(null);
+            setSelectedSeries(null);
+            setRadarSelection([]);
+          }
+        } 
+      }, [playData, selectedPlay]);
+
+      // Calculate which games to use based on filter
+      const filteredGameDates = useMemo(() => {
+        if (!gamesList.length) return [];
+
+        switch (filterMode) {
+          case 'Last 3':
+            return gamesList.slice(0, 3);
+          case 'Last 5':
+            return gamesList.slice(0, 5);
+          case 'ACC':
+            return gamesList.filter(date => {
+              const game = schedule.find(g => g.date === date);
+              return game?.conference === 'ACC';
+            });
+          case 'All':
+            return gamesList;
+          case 'All Data':
+            return [];
+          default:
+            return [];
+        }
+      }, [filterMode, gamesList, schedule]);
+
+      // Update useFilter flag
+      useEffect(() => {
+        setUseFilter(filterMode !== 'All Data');
+        setLoading(true);
+      }, [filterMode]);
+
+      // Recalculate all stats from raw possessions
+      const calculateStatsFromPossessions = useCallback(async (season, gameDates) => {
+        console.log('🔢 calculateStatsFromPossessions called with:', gameDates);
+        const allStats = {};
+        let totalPossessions = 0;
+
+        // Load possessions for filtered games
+        for (let i = 0; i < gameDates.length; i++) {
+          const gameDate = gameDates[i];
+          const snap = await database.ref(`playcalls/${season}/games/${gameDate}/possessions`).once('value');
+          if (!snap.exists()) continue;
+
+          const possessions = snap.val();
+          const possCount = Object.keys(possessions).length;
+          totalPossessions += possCount;
+          console.log(`    ✅ Found ${possCount} possessions for ${gameDate}`);
+
+          Object.values(possessions).forEach((poss) => {
+            // Skip non-playcalls (but include Transition, NoPlay, WhatsNext)
+            if (poss.type === 'transition') {
+              const key = 'Transition/1';
+              if (!allStats[key]) {
+                allStats[key] = initStats('Transition', 'T1');
+              }
+              incrementStats(allStats[key], poss);
+            } else if (poss.type === 'no_play') {
+              const key = 'NoPlay/1';
+              if (!allStats[key]) {
+                allStats[key] = initStats('NoPlay', '1');
+              }
+              incrementStats(allStats[key], poss);
+            } else if (poss.type === 'whats_next') {
+              const key = 'WhatsNext/1';
+              if (!allStats[key]) {
+                allStats[key] = initStats('WhatsNext', '1');
+              }
+              incrementStats(allStats[key], poss);
+            } else if (poss.type === 'playcall' && poss.series && poss.playName) {
+              const key = `${poss.series}/${poss.playName}`;
+              if (!allStats[key]) {
+                allStats[key] = initStats(poss.series, poss.playName);
+              }
+              incrementStats(allStats[key], poss);
+            }
+          });
+        }
+
+        // Calculate derived metrics for all plays
+        Object.values(allStats).forEach(stats => {
+          calculateDerivedMetrics(stats);
+        });
+
+        return allStats;
+      }, []);
+
+      // Helper: Initialize stats object
+      const initStats = (series, playName) => ({
+        series,
+        playName,
+        NumCalls: 0,
+        '+2': 0, '+3': 0, '+2F': 0, '+3F': 0,
+        '-2': 0, '-3': 0, '-2F': 0, '-3F': 0,
+        'TO': 0, 'NOTHING': 0,
+        'Foul_Floor': 0, 'Foul_Bonus': 0,
+        FT_Made: 0,
+        FT_Att: 0
+      });
+
+      // Helper: Increment stats from possession
+      const incrementStats = (stats, poss) => {
+        stats.NumCalls++;
+        
+        // Count outcome
+        const outcome = poss.outcome;
+        if (stats.hasOwnProperty(outcome)) {
+          stats[outcome]++;
+        }
+        
+        // Add FTs
+        stats.FT_Made += (poss.freeThrowsMade || 0);
+        stats.FT_Att += (poss.freeThrowsAttempted || 0);
+      };
+
+      // Helper: Calculate derived metrics
+      const calculateDerivedMetrics = (stats) => {
+        const n = stats.NumCalls;
+        if (n === 0) return;
+        
+        // Points
+        const fgPoints = (stats['+2'] * 2) + (stats['+3'] * 3) + (stats['+2F'] * 2) + (stats['+3F'] * 3);
+        const totalPoints = fgPoints + stats.FT_Made;
+        
+        stats.PPP = totalPoints / n;
+        stats.AvgPointsNoFTs = fgPoints / n;
+        
+        // FG%
+        const made = stats['+2'] + stats['+3'] + stats['+2F'] + stats['+3F'];
+        stats.MadeFG = (made / n) * 100;
+        
+        // Fouls
+        stats.FOF = stats['+2F'] + stats['+3F'] + stats['-2F'] + stats['-3F'];
+        const shootingFouls = stats.FOF + (stats['Foul_Bonus'] || 0);
+        stats.FreeThrowRate = shootingFouls / n;
+        stats.FoulRate = (shootingFouls + (stats['Foul_Floor'] || 0)) / n;
+      };
+
+      // Load from Firebase (live listener)
+      const load=useCallback(()=>{
+        setLoading(true);
+
+        if (useFilter) {
+          const gamesToUse = filteredGameDates.length > 0 ? filteredGameDates : gamesList;
+          if (gamesToUse.length === 0) {
+            setLoading(false);
+            return () => {};
+          }
+          
+          calculateStatsFromPossessions(season, filteredGameDates).then(stats => {
+            
+            // Convert to same format as database structure
+            const formatted = {};
+            Object.entries(stats).forEach(([key, data]) => {
+              const [series, playName] = key.split('/');
+              if (!formatted[series]) formatted[series] = {};
+              formatted[series][playName] = data;
+            });
+
+            setPlayData(formatted);
+            setUpdated(new Date().toLocaleString());
+            setLoading(false);
+            }).catch(error => {
+              console.error("Error loading filtered data", error);
+              setLoading(false);
+            });
+
+            return () => {};
+        } else {
+          const dbRef= database.ref(`playcalls/${season}/stats/series`);
+          const listener = dbRef.on('value', (snap) => {
+            setPlayData(snap.exists() ? snap.val() : null);
+            setUpdated(new Date().toLocaleString());
+            setLoading(false);
+          }, (error) => {
+            console.error("Error: ", error);
+            setLoading(false);
+          });
+          return () => {
+            dbRef.off('value', listener);
+          };
+        }
+      },[season,useFilter,filteredGameDates,calculateStatsFromPossessions, filterMode]);
+
+      useEffect(()=>{
+        const cleanup = load();
+        return cleanup;
+      },[load]);
+
+      // SERIES
+      const allSeries=useMemo(()=> playData?Object.keys(playData).sort():[],[playData]);
+
+      // FLAT ROWS
+      const flat=useMemo(()=>{
+        if(!playData) return [];
+        const out=[];
+        for (const series of Object.keys(playData)){
+          const plays=playData[series]||{};
+          for (const num of Object.keys(plays)){
+            const s=plays[num]||{};
+            const n=parseInt(s.NumCalls||s.numCalls)||0;
+            if(n<=0) continue;
+
+            let ppp = (s.PPP!==undefined && s.PPP!==null) ? (+s.PPP||0)
+              : n ? ( ( (+s['+2']||0)+(+s['+2F']||0) )*2 + ( (+s['+3']||0)+(+s['+3F']||0) )*3 + (+s.FT_Made||0) )/n : 0;
+
+            const ftr = (s.FreeThrowRate!==undefined && s.FreeThrowRate!==null)
+              ? +s.FreeThrowRate
+              : n ? ( (+s['+2F']||0)+(+s['+3F']||0)+(+s['-2F']||0)+(+s['-3F']||0) )/n : 0;
+
+            out.push({series,playNumber:num,n,ppp,ftr,stats:s});
+          }
+        }
+        return out;
+      },[playData]);
+
+      const seriesCounts=useMemo(()=>{
+        const m={}; flat.forEach(r=> m[r.series]=(m[r.series]||0)+r.n ); return m;
+      },[flat]);
+
+      const scopeRows=useMemo(()=> selectedSeries?flat.filter(r=>r.series===selectedSeries):flat,[flat,selectedSeries]);
+
+      // SORTABLE TOP 5
+      const SORTS = { N:'n', PPP:'ppp', FTR:'ftr' };
+      const [sortBy,setSortBy]=useState(SORTS.N);
+      const [sortAsc,setSortAsc]=useState(false);
+      const clickSort = (m)=> setSortBy(prev=>{
+        if(prev===m){ setSortAsc(v=>!v); return prev; }
+        setSortAsc(false); return m;
+      });
+      const glyph = (m)=> sortBy===m ? (sortAsc?'▴':'▾') : '';
+
+      const keyOf = (r)=> sortBy==='n'?r.n : sortBy==='ppp'?r.ppp : r.ftr;
+      const top5=useMemo(()=>{
+        return [...scopeRows].sort((a,b)=> sortAsc ? keyOf(a)-keyOf(b) : keyOf(b)-keyOf(a)).slice(0,5);
+      },[scopeRows,sortBy,sortAsc]);
+
+      // CLICK PLAY
+      const clickPlayRow = (r) => {
+        setSelectedSeries(r.series);
+        setSelectedPlay({ series: r.series, playNumber: r.playNumber });
+        setRadarSelection([r.playNumber]); // auto-select play for radar
+      };
+      const playLabel = (r)=> `${r.series} ${r.playNumber}`;
+
+      // AGGREGATE SERIES
+      const aggregateSeries = (seriesName) => {
+        const plays = playData?.[seriesName] || {};
+        const A = { N:0,'+2':0,'+3':0,'+2F':0,'+3F':0,'-2':0,'-3':0,'-2F':0,'-3F':0, NOTHING:0, TO:0, FOF:0 };
+        Object.values(plays).forEach(s=>{
+          const n = parseInt(s.NumCalls||s.numCalls)||0;
+          A.N += n;
+          ['+2','+3','+2F','+3F','-2','-3','-2F','-3F','NOTHING','TO'].forEach(k=> A[k]+= (+s[k]||0) );
+          A.FOF += (+s['+2F']||0)+(+s['+3F']||0)+(+s['-2F']||0)+(+s['-3F']||0);
+        });
+        const pts = 2*(A['+2']+A['+2F']) + 3*(A['+3']+A['+3F']);
+        const ppp = A.N ? pts/A.N : 0;
+        const made = A['+2']+A['+3']+A['+2F']+A['+3F'];
+        const fg  = A.N ? (made/A.N)*100 : 0;
+        return { ...A, pts, ppp, fg };
+      };
+
+      // DETAIL + SERIES AGG
+      const detailStats=useMemo(()=>{
+        if(!selectedSeries) return null;
+        if(!playData || !playData[selectedSeries]) return null;
+
+        if(selectedPlay && selectedPlay.series===selectedSeries){
+          const playExists=playData[selectedSeries][selectedPlay.playNumber];
+          if (!playExists) return null;
+          return playExists;
+        }
+        return aggregateSeries(selectedSeries);
+      },[selectedSeries,selectedPlay,playData]);
+
+      const seriesAgg=useMemo(()=> {
+        if (!selectedSeries || !playData || !playData[selectedSeries]) return null;
+        return aggregateSeries(selectedSeries);
+      },[selectedSeries,playData]);
+
+
+
+      // HEADER METRICS (for charts)
+      const header=useMemo(()=>{
+        if(!detailStats) return null;
+        const n = detailStats.NumCalls!==undefined ? (parseInt(detailStats.NumCalls)||0) : detailStats.N||0;
+        const pts = (detailStats.pts!==undefined)
+          ? detailStats.pts
+          : 2*((+detailStats['+2']||0)+(+detailStats['+2F']||0)) + 3*((+detailStats['+3']||0)+(+detailStats['+3F']||0));
+        const ppp = n ? pts/n : 0;
+        const made = (+detailStats['+2']||0)+(+detailStats['+3']||0)+(+detailStats['+2F']||0)+(+detailStats['+3F']||0);
+        const fg = n ? (made/n)*100 : 0;
+        const fof = detailStats.FOF || 0;
+        return {n,ppp,fg,fof};
+      },[detailStats]);
+
+      const comparisonLabels = useMemo(() => {
+        if (selectedPlay) {
+            return ["Play", "Series"];
+        }
+        return ["Series", "All Plays"];
+      }, [selectedPlay]);
+
+      const comparisonColors = useMemo(() => {
+        if (selectedPlay) {
+            return [VT_PURPLE, VT_PINK];
+        }
+        return [VT_PURPLE, VT_PINK];
+      }, [selectedPlay]);
+
+
+      const toPct = (num,den)=> den? 100*num/den : 0;
+      
+      // OVERALL AGGREGATE OF ALL PLAYS (new)
+      const overallAgg = useMemo(() => {
+          if (!flat.length) return null;
+
+          const A = {
+              N: 0, '+2': 0, '+3': 0, '+2F': 0, '+3F': 0,
+              '-2': 0, '-3': 0, '-2F': 0, '-3F': 0,
+              NOTHING: 0, TO: 0, FOF: 0
+          };
+
+          flat.forEach(r => {
+              const s = r.stats;
+              const n = r.n;
+
+              A.N += n;
+              ['+2','+3','+2F','+3F','-2','-3','-2F','-3F','NOTHING','TO'].forEach(k => {
+                  A[k] += (+s[k] || 0);
+              });
+
+              A.FOF += (+s['+2F']||0)+(+s['+3F']||0)+(+s['-2F']||0)+(+s['-3F']||0);
+          });
+
+          // Derived
+          const pts = 2*(A['+2']+A['+2F']) + 3*(A['+3']+A['+3F']);
+          const ppp = A.N ? pts / A.N : 0;
+          const made = A['+2'] + A['+3'] + A['+2F'] + A['+3F'];
+          const fg = A.N ? (made / A.N) * 100 : 0;
+
+          return { ...A, pts, ppp, fg };
+      }, [flat]);
+
+      // New helper: comparison target
+      const comparisonAgg = useMemo(() => {
+          return selectedPlay ? seriesAgg : overallAgg;
+      }, [selectedPlay, seriesAgg, overallAgg]);
+
+
+      // ====== HEATMAP rows (Post-game; series selected; no play) ======
+      const seriesHeatmap = useMemo(() => {
+        if (!selectedSeries || selectedPlay || !playData) return null;
+        const plays = playData[selectedSeries];
+        if (!plays) return null;
+
+        return Object.keys(plays).map(playNumber => {
+          const s = plays[playNumber] || {};
+          const counts = OUTCOME_KEYS.map(k => +s[k] || 0);
+          const total = counts.reduce((a, b) => a + b, 0);
+          const percents = total > 0 ? counts.map(c => (c / total) * 100) : counts.map(() => 0);
+          return { label: `${selectedSeries} ${playNumber}`, raw: counts, data: percents, total };
+        });
+      }, [selectedSeries, selectedPlay, playData]);
+
+      // 100% STACKED OUTCOME
+      useEffect(() => {
+        if (!detailStats || !selectedSeries || !comparisonAgg || !outcomeRef.current) return;
+
+        if (outcomeInst.current) outcomeInst.current.destroy();
+
+        const nPlay = header.n || 1;
+        const nComp = comparisonAgg.N || 1;
+
+        // PLAY VALUES
+        const madeP = (+detailStats['+2']||0)+(+detailStats['+3']||0)+(+detailStats['+2F']||0)+(+detailStats['+3F']||0);
+        const missP = (+detailStats['-2']||0)+(+detailStats['-3']||0)+(+detailStats['-2F']||0)+(+detailStats['-3F']||0);
+        const nothingP = (+detailStats.NOTHING||0);
+        const toP = (+detailStats.TO||0);
+        const otherP = nPlay - madeP - missP - nothingP - toP;
+
+        // COMPARISON VALUES (series or overall)
+        const madeC = (comparisonAgg['+2']||0)+(comparisonAgg['+3']||0)+(comparisonAgg['+2F']||0)+(comparisonAgg['+3F']||0);
+        const missC = (comparisonAgg['-2']||0)+(comparisonAgg['-3']||0)+(comparisonAgg['-2F']||0)+(comparisonAgg['-3F']||0);
+        const nothingC = (comparisonAgg.NOTHING||0);
+        const toC = (comparisonAgg.TO||0);
+        const otherC = nComp - madeC - missC - nothingC - toC;
+
+        const cats = ['Made FG','Miss','Nothing','Turnover', 'Other'];
+        const playPct = [
+            toPct(madeP,nPlay), toPct(missP,nPlay),
+            toPct(nothingP,nPlay), toPct(toP,nPlay), toPct(otherP,nPlay)
+        ];
+        const compPct = [
+            toPct(madeC,nComp), toPct(missC,nComp),
+            toPct(nothingC,nComp), toPct(toC,nComp), toPct(otherC,nComp)
+        ];
+
+        const colors = ['#10B981','#EF4444','#6B7280','#F59E0B', '#8B5CF6'];
+        const datasets = cats.map((c,i)=>({
+            label:c,
+            data:[playPct[i], compPct[i]],
+            backgroundColor:colors[i],
+            stack:'100'
+        }));
+
+        outcomeInst.current = new Chart(outcomeRef.current.getContext('2d'), {
+            type:'bar',
+            data:{ labels:comparisonLabels, datasets },
+            options:{
+                indexAxis:'y',
+                responsive:true,
+                maintainAspectRatio:false,
+                scales:{
+                    x:{ stacked:true, beginAtZero:true, max:100,
+                        ticks:{ callback:v=>`${v}%`, color:dark?'#9CA3AF':'#6B7280' },
+                        grid:{ color:dark?'#374151':'#E5E7EB' }
+                    },
+                    y:{ stacked:true,
+                        ticks:{ color:dark?'#FFFFFF':'#111827' },
+                        grid:{ display:false }
+                    }
+                },
+                plugins:{
+                    legend:{ position:'bottom', labels:{ color:dark?'#fff':'#374151' } },
+                    tooltip:{ callbacks:{ label:(c)=>`${c.dataset.label}: ${c.formattedValue}%` } }
+                }
+            }
+        });
+
+    }, [detailStats, comparisonAgg, selectedSeries, dark, header]);
+
+
+      // METRICS: PPP Comparison Chart
+      useEffect(() => {
+      if (!detailStats || !comparisonAgg || !pppRef.current) return;
+      if (pppInst.current) pppInst.current.destroy();
+
+      const playPts = header.ppp || 0;
+      const compPts = comparisonAgg.ppp || 0;
+
+      pppInst.current = new Chart(pppRef.current.getContext('2d'), {
+          type:'bar',
+          data:{
+              labels: comparisonLabels,
+              datasets:[
+                  {
+                      label: 'Avg Points (PPP)',
+                      data:[playPts, compPts],
+                      backgroundColor: [comparisonColors[0], comparisonColors[1]]
+                  }
+              ]
+          },
+          options:{
+              responsive:true,
+              maintainAspectRatio:false,
+              plugins:{
+                  legend: false,
+                  tooltip:{
+                      callbacks:{
+                          label:(ctx)=> `PPP: ${ctx.parsed.y.toFixed(2)}`
+                      }
+                  }
+              },
+              scales:{
+                  x:{ ticks:{ color:dark?'#FFFFFF':'#111827' }, grid:{ color:dark?'#374151':'#E5E7EB' }},
+                  y:{
+                      position:'left', min:0, max:2.0,
+                      title:{ display:true, text:'Avg Points (PPP)', color:dark?'#fff':'#111' },
+                      ticks:{ color:dark?'#9CA3AF':'#374151' },
+                      grid:{ color:dark?'#374151':'#E5E7EB' }
+                  }
+              }
+          }
+      });
+    }, [detailStats, comparisonAgg, header, dark, comparisonLabels, comparisonColors]);
+
+    // FG% Comparison Chart
+      useEffect(() => {
+      if (!detailStats || !comparisonAgg || !fgRef.current) return;
+      if (fgInst.current) fgInst.current.destroy();
+
+      const playFG = header.fg || 0;
+      const compFG = comparisonAgg.fg || 0;
+
+      fgInst.current = new Chart(fgRef.current.getContext('2d'), {
+          type:'bar',
+          data:{
+              labels: comparisonLabels,
+              datasets:[
+                  {
+                      label: 'FG %',
+                      data:[playFG, compFG],
+                      backgroundColor:[comparisonColors[0], comparisonColors[1]]
+                  }
+              ]
+          },
+          options:{
+              responsive:true,
+              maintainAspectRatio:false,
+              plugins:{
+                  legend: false,
+                  tooltip:{
+                      callbacks:{
+                          label:(ctx)=> `FG %: ${ctx.parsed.y.toFixed(1)}%`
+                      }
+                  }
+              },
+              scales:{
+                  x:{ ticks:{ color:dark?'#FFFFFF':'#111827' }, grid:{ color:dark?'#374151':'#E5E7EB' }},
+                  y:{
+                      position:'right', min:0, max:100,
+                      title:{ display:true, text:'FG %', color:dark?'#fff':'#111' },
+                      ticks:{ callback:v=>`${v}%`, color:dark?'#9CA3AF':'#374151' },
+                      grid:{ color:dark?'#374151':'#E5E7EB' }
+                  }
+              }
+          }
+      });
+
+  }, [detailStats, comparisonAgg, header, dark, comparisonLabels, comparisonColors]);
+
+
+      // SCORING BREAKDOWN (%)
+      useEffect(() => {
+      if (!detailStats || !comparisonAgg || !breakdownRef.current) return;
+      if (breakdownInst.current) breakdownInst.current.destroy();
+
+      const nPlay = header.n || 1;
+      const nComp = comparisonAgg.N || 1;
+
+      // PLAY %
+      const valsPlayPct = [
+          toPct(+detailStats['+3']||0, nPlay),
+          toPct(+detailStats['+2']||0, nPlay),
+          toPct((+detailStats['-2']||0)+(+detailStats['-3']||0), nPlay),
+          toPct(+detailStats['+3F']||0, nPlay),
+          toPct(+detailStats['+2F']||0, nPlay),
+          toPct((+detailStats['-2F']||0)+(+detailStats['-3F']||0), nPlay),
+      ];
+
+      // COMPARISON %
+      const valsCompPct = [
+          toPct(comparisonAgg['+3']||0, nComp),
+          toPct(comparisonAgg['+2']||0, nComp),
+          toPct((comparisonAgg['-2']||0)+(comparisonAgg['-3']||0), nComp),
+          toPct(comparisonAgg['+3F']||0, nComp),
+          toPct(comparisonAgg['+2F']||0, nComp),
+          toPct((comparisonAgg['-2F']||0)+(comparisonAgg['-3F']||0), nComp),
+      ];
+
+      breakdownInst.current = new Chart(breakdownRef.current.getContext('2d'), {
+          type:'bar',
+          data:{
+              labels:['3pt','2pt','No Score','3pt+Foul','2pt+Foul','Miss+Foul'],
+              datasets:[
+                  {
+                      label: comparisonLabels[0],
+                      data: valsPlayPct,
+                      backgroundColor: VT_PURPLE
+                  },
+                  {
+                      label: comparisonLabels[1],
+                      data: valsCompPct,
+                      backgroundColor: VT_PINK
+                  }
+              ]
+          },
+          options:{
+              responsive:true,
+              maintainAspectRatio:false,
+              plugins:{
+                  legend:{ position:'bottom', labels:{ color:dark?'#fff':'#374151' } },
+                  tooltip:{ callbacks:{ label:(c)=>`${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } }
+              },
+              scales:{
+                  y:{
+                      beginAtZero:true, max:100,
+                      ticks:{ callback:v=>`${v}%`, color:dark?'#9CA3AF':'#6B7280' },
+                      grid:{ color:dark?'#374151':'#E5E7EB' }
+                  },
+                  x:{
+                      ticks:{ color:dark?'#FFFFFF':'#111827' },
+                      grid:{ color:dark?'#374151':'#E5E7EB' }
+                  }
+              }
+          }
+      });
+
+  }, [detailStats, comparisonAgg, selectedSeries, selectedPlay, dark, header]);
+
+
+      // POST-GAME SCATTER (kept)
+      const seriesScatter = useMemo(() => {
+        if (!selectedSeries || selectedPlay || !playData) return null;
+        const plays = playData[selectedSeries];
+        if (!plays) return null;
+        return Object.keys(plays).map(playNumber => {
+          const s = plays[playNumber] || {};
+          const n = parseInt(s.NumCalls || s.numCalls) || 0;
+          const pts = 2*((+s['+2']||0)+(+s['+2F']||0)) + 3*((+s['+3']||0)+(+s['+3F']||0));
+          const ppp = n ? pts / n : 0;
+          return { label: `${selectedSeries} ${playNumber}`, x: n, y: ppp };
+        });
+      }, [selectedSeries, selectedPlay, playData]);
+
+      useEffect(() => {
+        if (!seriesScatter || !scatterRef.current) return;
+        if (scatterInst.current) scatterInst.current.destroy();
+        scatterInst.current = new Chart(scatterRef.current.getContext("2d"), {
+          type: "scatter",
+          data: {
+            datasets: [
+              {
+                label: "Plays",
+                data: seriesScatter.map(p => ({ x: p.x, y: p.y })),
+                backgroundColor: "#3B82F6",
+                borderColor: "#2563EB",
+                pointRadius: 6,
+                pointHoverRadius: 8
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: {
+                title: { display: true, text: "Times Called (N)", color: dark ? "#f9fafb" : "#111827" },
+                ticks: { color: dark ? "#9CA3AF" : "#374151" },
+                grid: { color: dark ? "#374151" : "#E5E7EB" }
+              },
+              y: {
+                title: { display: true, text: "Points per Play (PPP)", color: dark ? "#f9fafb" : "#111827" },
+                ticks: { color: dark ? "#9CA3AF" : "#374151" },
+                grid: { color: dark ? "#374151" : "#E5E7EB" },
+                beginAtZero: true
+              }
+            }
+          }
+        });
+      }, [seriesScatter, dark, postGameMode]);
+
+      // RADAR
+      function buildRadarStats(s, playNumberLabel = "") {
+        const n = parseInt(s.NumCalls || s.numCalls) || 1;
+        const made = ['+2','+3','+2F','+3F'].reduce((sum, k) => sum + (+s[k] || 0), 0);
+        const misses = ['-2','-3','-2F','-3F'].reduce((sum, k) => sum + (+s[k] || 0), 0);
+        const to = +s.TO || 0;
+        const fg = n ? made / n : 0;
+        const ftr = s.FreeThrowRate !== undefined ? +s.FreeThrowRate : 0;
+        const pts = (+s["+2"]||0)*2 + (+s["+3"]||0)*3 + (+s["+2F"]||0)*2 + (+s["+3F"]||0)*3;
+        const ppp = n ? pts / n : 0;
+        const tor = n ? to / n : 0;
+        const torInv = 1 - tor;
+        const pppNorm = Math.min(ppp / 2, 1);
+        const ftrNorm = Math.min(ftr / 0.5, 1);
+        return { label: playNumberLabel, values: [fg, ftrNorm, pppNorm, torInv], real: { fg, ftr, ppp, torInv } };
+      }
+
+      useEffect(() => {
+        if (!radarRef.current) return;
+        if (!selectedSeries || !playData || !playData[selectedSeries]) {
+          if (radarInst.current) { radarInst.current.destroy(); radarInst.current = null; }
+          return;
+        }
+
+        const labels = ["FG%", "Free Throw Rate", "PPP", "Turnover Rate"];
+        const datasets = [];
+        const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#8B5CF6"];
+
+        //  Build a list of play numbers to display
+        let playsToShow = [...radarSelection];
+
+        // If a play is selected, ensure it is ALWAYS included
+        if (selectedPlay) {
+          if (!playsToShow.includes(selectedPlay.playNumber)) {
+            playsToShow.unshift(selectedPlay.playNumber);
+          }
+        }
+
+        //  Build datasets for every play in the list
+        playsToShow.forEach((num, i) => {
+          const s = playData[selectedSeries][num];
+          if (!s) return;
+
+          const out = buildRadarStats(s, `${selectedSeries} ${num}`);
+          const C = COLORS[i % COLORS.length];
+
+          datasets.push({
+            label: out.label,
+            data: out.values,
+            realValues: out.real,
+            fill: true,
+            backgroundColor: C + "40",
+            borderColor: C,
+          });
+        });
+
+        //  Handle empty state
+        if (datasets.length === 0) {
+          if (radarInst.current) radarInst.current.destroy();
+          radarInst.current = null;
+          return;
+        }
+
+        //  Render chart
+        if (radarInst.current) radarInst.current.destroy();
+        radarInst.current = new Chart(radarRef.current, {
+          type: "radar",
+          data: { labels, datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              r: {
+                min: 0, max: 1,
+                ticks: { display: false },
+                grid: { color: dark ? "#4B5563" : "#D1D5DB" },
+                pointLabels: { color: dark ? "#f9fafb" : "#111827", font: { size: 12 } },
+              },
+            },
+            plugins: {
+              legend: { labels: { color: dark ? "#fff" : "#111" } },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => {
+                    const real = ctx.dataset.realValues;
+                    const metric = ctx.label;
+                    switch (metric) {
+                      case "FG%": return `FG%: ${(real.fg * 100).toFixed(1)}%`;
+                      case "Free Throw Rate": return `Free Throw Rate: ${(real.ftr * 100).toFixed(1)}%`;
+                      case "PPP": return `PPP: ${real.ppp.toFixed(2)}`;
+                      case "Turnover Rate": return `Turnover Rate: ${((1 - real.torInv) * 100).toFixed(1)}%`;
+                      default: return "";
+                    }
+                  }
+                }
+              }
+            }
+          }
+        });
+      }, [selectedSeries, selectedPlay, radarSelection, playData, dark]);
+
+
+      // HELPERS
+      const pppColor = (v)=> v>=0.95 ? 'text-green-400' : 'text-red-400';
+      const clearDetail = () => {
+        setSeriesQuery('');
+        setSelectedPlay(null);
+        setSelectedSeries(null);
+        setRadarSelection([]);
+        if (seriesInputRef.current) seriesInputRef.current.focus();
+      };
+
+      return (
+        <div className="max-w-7xl mx-auto p-4">
+          {/* HEADER */}
+          <div className={`rounded-lg shadow p-4 mb-6 ${dark?'bg-gray-800':'bg-white'}`}>
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Virginia_Tech_Hokies_logo.svg/2560px-Virginia_Tech_Hokies_logo.svg.png" alt="VT" className="h-12"/>
+                <h1 className="text-2xl font-bold">Sideline Analytics</h1>
+              </div>
+              <div className="flex items-center gap-2">
+                <select value={season} onChange={(e)=>setSeason(e.target.value)}
+                        className={`selectlike pl-3 pr-8 py-2 rounded border ${dark?'bg-gray-700 border-gray-600 text-white':'bg-white border-gray-300'}`}>
+                  <option value="2024">Season 2024</option>
+                  <option value="2025">Season 2025</option>
+                </select>
+                <select
+                  value={filterMode}
+                  onChange={(e) => setFilterMode(e.target.value)}
+                  className={`selectlike pl-3 pr-8 py-2 rounded border ${dark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                >
+                  <option value="All Data">All Data</option>
+                  <option value="All">All Games ({gamesList.length})</option>
+                  <option value="Last 3">Last 3 Games</option>
+                  <option value="Last 5">Last 5 Games</option>
+                  <option value="ACC">
+                    ACC Only ({gamesList.filter(date => {
+                      const game = schedule.find(g => g.date === date);
+                      return game?.conference === 'ACC';
+                    }).length})
+                  </option>
+                </select>
+                <button type="button" className="flex items-center gap-2 px-3 py-2 rounded text-white bg-green-600 hover:bg-green-700 shadow">
+                  <span className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
+                  Live
+                </button>
+                <button onClick={()=>setDark(d=>!d)}
+                        className={`px-3 py-2 rounded ${dark?'bg-gray-700 text-white hover:bg-gray-600':'bg-gray-200 text-gray-900 hover:bg-gray-300'}`}>{dark?'☀️ Light':'🌙 Dark'}</button>
+                <button
+                  onClick={() => setPostGameMode(m => !m)}
+                  className={`px-3 py-2 rounded shadow ${dark ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-900 hover:bg-gray-300'}`}
+                >
+                  {postGameMode ? 'In-Game Mode' : 'Post-Game Mode'}
+                </button>
+              </div>
+            </div>
+            {updated && (
+              <div className="flex items-center gap-2 mt-2">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                <div className="text-xs opacity-70">Live • {updated}
+                  {useFilter && (
+                    <span className="px-2 py-1 rounded text-white">
+                    •  Filtered: {filteredGameDates.length} games
+                    </span>
+                  )}
+                  </div>
+              </div>
+            )}
+          </div>
+
+          {/* LOADING */}
+          {loading && (
+            <div className="animate-pulse space-y-4">
+              <div className="h-16 bg-gray-300 rounded"></div>
+              <div className="h-64 bg-gray-300 rounded"></div>
+              <div className="h-96 bg-gray-300 rounded"></div>
+            </div>
+          )}
+
+          {!loading && (
+            <>
+              {/* SERIES SEARCH */}
+              <div className={`rounded-lg shadow p-4 mb-4 ${dark?'bg-gray-800':'bg-white'}`}>
+                <label className="text-sm block mb-1">Search series (e.g., <span className="opacity-80">Alpha</span> or <span className="opacity-80">November</span>)</label>
+                <div className="flex gap-2">
+                <input
+                  ref={seriesInputRef}
+                  type="text"
+                  value={seriesQuery}
+                  onChange={(e)=>{ setSeriesQuery(e.target.value); }}
+                  placeholder="Start typing…"
+                  className={`w-full px-3 py-2 rounded border ${dark?'bg-gray-700 border-gray-600 text-white placeholder-gray-400':'bg-white border-gray-300'}`}
+                />
+                {selectedSeries && (
+                  <button
+                    onClick={clearDetail}
+                    className={`px-4 py-2 rounded font-medium transition-colors ${
+                      dark 
+                        ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                    }`}
+                  >
+                    Clear
+                    </button>
+                  )}
+                </div>
+                <div className={`mt-2 rounded-lg border ${dark?'border-gray-700':'border-gray-300'} max-h-40 overflow-y-auto`}>
+                  {allSeries
+                    .filter(s=>!seriesQuery || s.toLowerCase().includes(seriesQuery.toLowerCase()))
+                    .sort((a,b)=>(seriesCounts[b]||0)-(seriesCounts[a]||0))
+                    .map((s,idx)=>(
+                      <div key={idx}
+                        className={`suggestion px-3 py-2 flex items-center justify-between ${dark?'hover:bg-gray-800':'hover:bg-gray-100'}`}
+                        onClick={()=>{ setSelectedSeries(s); setSelectedPlay(null); setSeriesQuery(s); }}>
+                        <div className="font-medium">{s}</div>
+                        <div className="text-xs opacity-75">N={seriesCounts[s]||0}</div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* TOP 5 TABLE with sortable headers */}
+              <div className={`rounded-lg shadow p-4 mb-6 ${dark?'bg-gray-800':'bg-white'}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-bold">Top 5 Plays</h2>
+                  <span className="text-xs opacity-70">{selectedSeries ?? 'All Series'}</span>
+                </div>
+                <table className="tbl w-full">
+                  <thead className={`${dark?'bg-gray-900 text-gray-200':'bg-gray-100 text-gray-700'}`}>
+                    <tr>
+                      <th className="text-left">Play</th>
+                      <th className="text-center cursor-pointer select-none" onClick={()=>clickSort(SORTS.N)}>
+                        Times Called {glyph(SORTS.N)}
+                      </th>
+                      <th className="text-center cursor-pointer select-none" onClick={()=>clickSort(SORTS.PPP)}>
+                        Pts/Play {glyph(SORTS.PPP)}
+                      </th>
+                      <th className="text-center cursor-pointer select-none" onClick={()=>clickSort(SORTS.FTR)}>
+                        FT Rate {glyph(SORTS.FTR)}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {top5.length===0 && (<tr><td colSpan="4" className="py-3 text-sm opacity-70">No plays.</td></tr>)}
+                    {top5.map((r,i)=>(
+                      <tr key={`t-${i}`} className={`${dark?'hover:bg-gray-800':'hover:bg-gray-100'} cursor-pointer`} onClick={()=>clickPlayRow(r)}>
+                        <td className="font-medium">{playLabel(r)}</td>
+                        <td className="text-center">{r.n}</td>
+                        <td className={`text-center font-semibold ${pppColor(r.ppp)}`}>{r.ppp.toFixed(2)}</td>
+                        <td className="text-center">{r.ftr.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* ===== HEATMAP (post-game; series selected; no play) ===== */}
+              {postGameMode && selectedSeries && !selectedPlay && seriesHeatmap && (
+                <div className={`rounded-lg shadow p-6 mb-6 ${dark ? 'bg-gray-800' : 'bg-white'}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold">Outcome Heatmap — {selectedSeries}</h3>
+                    <span className="text-xs opacity-70">{seriesHeatmap.length} plays</span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="tbl w-full">
+                      <thead className={`${dark ? 'bg-gray-900 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>
+                        <tr>
+                          <th className="text-left">Play</th>
+                          {OUTCOME_KEYS.map(k => (
+                            <th key={k} className="text-center">{k}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {seriesHeatmap.map((row, i) => (
+                          <tr key={i} className={`${dark ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}>
+                            <td className="font-medium">{row.label}</td>
+                            {row.data.map((val, j) => {
+                              const intensity = val / 100;
+                              const bg = `rgba(59,130,246,${intensity})`;
+                              return (
+                                <td
+                                  key={j}
+                                  className="text-center rounded"
+                                  style={{
+                                    backgroundColor: bg,
+                                    color: intensity > 0.5 ? 'white' : (dark ? '#f9fafb' : '#111827'),
+                                    fontWeight: '500', padding: '.5rem'
+                                  }}
+                                >
+                                  {val.toFixed(0)}%
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* POST-GAME SCATTER (kept) */}
+              {postGameMode && selectedSeries && !selectedPlay && (
+                <div className={`rounded-lg shadow p-6 mb-6 ${dark ? 'bg-gray-800' : 'bg-white'}`}>
+                  <h3 className="text-lg font-bold mb-4">Usage vs Success — {selectedSeries}</h3>
+                  <div style={{ height: "320px" }}>
+                    <canvas ref={scatterRef}></canvas>
+                  </div>
+                </div>
+              )}
+
+              {/* DETAIL CARD + RADAR (kept) */}
+              {(selectedSeries && detailStats && header && seriesAgg) && (
+                <div className={`rounded-lg shadow p-6 ${dark?'bg-gray-800':'bg-white'}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-3xl font-bold">
+                      {selectedPlay ? `${selectedSeries} ${selectedPlay.playNumber}` : `${selectedSeries}`}
+                    </h3>
+                  </div>
+
+                  {/* Outcome stacked + Metrics dual bar */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <div className="text-sm font-semibold mb-2">Outcome Distribution — Play vs Series Avg (100% stacked)</div>
+                      <div style={{height:'260px'}}><canvas ref={outcomeRef}></canvas></div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-sm font-semibold mb-2">Avg Points (PPP)</div>
+                        <div style={{height:'260px'}}><canvas ref={pppRef}></canvas></div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold mb-2">Field Goal Percentage (FG%)</div>
+                        <div style={{height:'260px'}}><canvas ref={fgRef}></canvas></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Scoring breakdown (%) */}
+                  <div className="mb-8">
+                    <div className="text-sm font-semibold mb-2">Scoring Breakdown (Percent) — Play vs Series Avg</div>
+                    <div style={{height:'260px'}}><canvas ref={breakdownRef}></canvas></div>
+                  </div>
+
+                  {/* Play Profile (Radar compare plays) */}
+                  <div className="rounded-lg mt-6" style={{ minHeight: "480px" }}>
+                    <h3 className="text-lg font-bold mb-4">Play Profile</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <div>
+                          {selectedSeries && (
+                            <>
+                              <label className="text-sm opacity-75 block mb-2">Compare plays (select up to 3)</label>
+
+                              {selectedPlay && (
+                                <div className="text-xs opacity-60 mb-2">
+                                  Currently viewing: <strong>{selectedSeries} {selectedPlay.playNumber}</strong>
+                                </div>
+                              )}
+
+                              <div className="space-y-2">
+                                {Object.keys(playData[selectedSeries]).map(num => {
+                                  const label = `${selectedSeries} ${num}`;
+                                  const selected = radarSelection.includes(num);
+                                  return (
+                                    <button
+                                      key={num}
+                                      onClick={() => {
+                                        if (selected) setRadarSelection(radarSelection.filter(x => x !== num));
+                                        else if (radarSelection.length < 3) setRadarSelection([...radarSelection, num]);
+                                      }}
+                                      className={`w-full px-3 py-2 rounded text-left border ${
+                                        selected
+                                          ? (dark ? "bg-blue-600 border-blue-500 text-white" : 
+                                                    "bg-blue-100 border-blue-400 text-blue-900")
+                                          : (dark ? "bg-gray-700 border-gray-600 text-white" : 
+                                                    "bg-white border-gray-300 text-gray-900")
+                                      }`}
+                                    >
+                                      {label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                      </div>
+                      <div className="flex justify-center">
+                        <div style={{ height: "540px", width: "540px" }}>
+                          <canvas ref={radarRef}></canvas>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App/>, document.getElementById('root'));
+  </script>
+</body>
+</html>
